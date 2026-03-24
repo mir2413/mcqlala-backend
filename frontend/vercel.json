@@ -1,5 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://YOUR-RENDER-BACKEND-URL.onrender.com/api/$1" }
+    { "source": "/api/(.*)", "destination": "https://mcqlala-backend-1.onrender.com/api/$1" }
   ]
 }
