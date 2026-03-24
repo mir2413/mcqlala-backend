@@ -981,3 +981,229 @@ body {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* --- MOBILE RESPONSIVE --- */
+@media (max-width: 768px) {
+    /* Navbar */
+    .navbar {
+        padding: 10px 15px;
+    }
+    
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        flex-direction: column;
+        padding: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    .nav-links.active {
+        display: flex;
+    }
+    
+    .hamburger {
+        display: block !important;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 5px;
+    }
+    
+    .brand-text h1 {
+        font-size: 16px;
+    }
+    
+    .brand-text p {
+        display: none;
+    }
+    
+    .user-profile {
+        display: none;
+    }
+    
+    .user-profile.active {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        padding: 15px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    /* Cards Grid */
+    #cardGrid {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+        padding: 15px !important;
+    }
+    
+    .card {
+        padding: 20px !important;
+    }
+    
+    .card-title {
+        font-size: 16px !important;
+    }
+    
+    /* Forms */
+    .form-container, .container {
+        padding: 15px !important;
+        margin: 10px !important;
+    }
+    
+    input, select, textarea {
+        padding: 12px !important;
+        font-size: 16px !important;
+    }
+    
+    button {
+        padding: 12px 20px !important;
+        font-size: 14px !important;
+        min-height: 44px;
+    }
+    
+    /* Quiz Page */
+    .quiz-container {
+        padding: 15px !important;
+    }
+    
+    .question-text {
+        font-size: 16px !important;
+        padding: 15px !important;
+    }
+    
+    .option-btn {
+        padding: 15px !important;
+        font-size: 14px !important;
+        margin: 8px 0 !important;
+    }
+    
+    /* Admin Panel */
+    .admin-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .admin-tabs button {
+        padding: 10px 12px !important;
+        font-size: 12px !important;
+    }
+    
+    /* Footer */
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px !important;
+    }
+    
+    /* User Profile */
+    #userProfile {
+        gap: 8px !important;
+    }
+    
+    #username {
+        font-size: 14px !important;
+    }
+    
+    /* Dropdowns */
+    select {
+        padding: 10px !important;
+        font-size: 14px !important;
+    }
+    
+    /* Contact Popup */
+    .contact-popup {
+        width: calc(100% - 30px) !important;
+        left: 15px !important;
+        right: 15px !important;
+        bottom: 80px !important;
+    }
+    
+    /* Login/Register Forms */
+    .auth-container {
+        padding: 20px 15px !important;
+    }
+    
+    /* Leaderboard */
+    .leaderboard-table {
+        font-size: 12px !important;
+    }
+    
+    .leaderboard-table th, .leaderboard-table td {
+        padding: 8px 4px !important;
+    }
+    
+    /* General spacing */
+    .container {
+        padding: 15px;
+    }
+    
+    h2 {
+        font-size: 20px !important;
+    }
+    
+    /* Hero section */
+    .hero-title {
+        font-size: 24px !important;
+    }
+    
+    .hero-subtitle {
+        font-size: 14px !important;
+    }
+    
+    /* Cards in grid */
+    .content-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .filters {
+        width: 100%;
+    }
+    
+    .filters select {
+        width: 100%;
+    }
+    
+    /* Subject/MCQ pages */
+    .mcq-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Results page */
+    .result-details {
+        padding: 15px !important;
+    }
+    
+    /* Profile page */
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* Extra small phones */
+@media (max-width: 480px) {
+    .logo-box {
+        width: 35px !important;
+        height: 35px !important;
+        font-size: 18px !important;
+    }
+    
+    .brand-text h1 {
+        font-size: 14px !important;
+    }
+    
+    .btn-secondary, .btn-primary {
+        padding: 10px 15px !important;
+        font-size: 13px !important;
+    }
+    
+    .card-meta {
+        font-size: 12px !important;
+    }
+}
