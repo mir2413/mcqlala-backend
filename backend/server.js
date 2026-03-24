@@ -132,8 +132,9 @@ app.use((req, res, next) => {
     next();
 });
 
-// Serve static files (HTML, CSS, JS) from the current directory
-app.use(express.static(__dirname, {
+// Serve static files (HTML, CSS, JS) from frontend directory
+const frontendPath = path.join(__dirname, '..', 'frontend');
+app.use(express.static(frontendPath, {
     setHeaders: (res, path) => {
         res.setHeader('X-Content-Type-Options', 'nosniff');
         res.setHeader('X-Frame-Options', 'DENY');
@@ -150,7 +151,7 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // Multer for file uploads
 const multer = require('multer');
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, 'pdfs')),
+    destination: (req, file, cb) => cb(null, path.join(__dirname, '..', 'frontend', 'pdfs')),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
 const upload = multer({ storage, fileFilter: (req, file, cb) => {
@@ -159,8 +160,9 @@ const upload = multer({ storage, fileFilter: (req, file, cb) => {
 }});
 
 // Ensure pdfs directory exists
-if (!fs.existsSync(path.join(__dirname, 'pdfs'))) {
-    fs.mkdirSync(path.join(__dirname, 'pdfs'));
+const pdfDir = path.join(__dirname, '..', 'frontend', 'pdfs');
+if (!fs.existsSync(pdfDir)) {
+    fs.mkdirSync(pdfDir, { recursive: true });
 }
 
 // Rate Limiting Middleware (Move after static files to allow UI to load freely)
@@ -453,7 +455,7 @@ app.post('/api/settings', adminAuth, (req, res) => {
 
 // PDF Routes
 app.get('/api/pdfs', (req, res) => {
-    const pdfDir = path.join(__dirname, 'pdfs');
+    const pdfDir = path.join(__dirname, '..', 'frontend', 'pdfs');
     if (!fs.existsSync(pdfDir)) return res.json([]);
     const files = fs.readdirSync(pdfDir).filter(f => f.endsWith('.pdf')).map(f => ({
         name: f,
@@ -469,7 +471,7 @@ app.post('/api/pdfs', adminAuth, upload.single('pdf'), (req, res) => {
 });
 
 app.delete('/api/pdfs/:filename', adminAuth, (req, res) => {
-    const filePath = path.join(__dirname, 'pdfs', req.params.filename);
+    const filePath = path.join(__dirname, '..', 'frontend', 'pdfs', req.params.filename);
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
         res.json({ message: 'PDF deleted' });
@@ -811,7 +813,8 @@ app.post('/api/users/reset-password', (req, res) => {
 
 // Fallback to index.html for any other requests (useful for SPA, though this is a multi-page site)
 app.get('*', (req, res) => {
-    const filePath = path.join(__dirname, req.path === '/' ? 'index.html' : req.path);
+    const frontendDir = path.join(__dirname, '..', 'frontend');
+    const filePath = path.join(frontendDir, req.path === '/' ? 'index.html' : req.path);
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
         res.sendFile(filePath);
     } else {
