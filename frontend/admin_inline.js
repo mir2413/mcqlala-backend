@@ -141,13 +141,24 @@
         }
 
         async function loadMCQs() {
+            const mcqList = document.getElementById('mcqList');
+            if (!mcqList) return;
+            
+            mcqList.innerHTML = '<p style="text-align: center; color: #999;">Loading questions...</p>';
             try {
                 const response = await fetch(`${API_BASE_URL}/mcqs/all`);
-                allMCQs = await response.json();
+                if (!response.ok) throw new Error('Failed to fetch MCQs');
+                const data = await response.json();
+                
+                if (!Array.isArray(data)) {
+                    throw new Error('Invalid data format');
+                }
+                
+                allMCQs = data;
                 displayMCQs(allMCQs);
             } catch (error) {
                 console.error('Error loading MCQs:', error);
-                document.getElementById('mcqList').innerHTML = '<li style="color: red;">Error loading questions</li>';
+                mcqList.innerHTML = '<li style="color: red;">Error loading questions</li>';
             }
         }
 
@@ -579,12 +590,14 @@
 
         async function loadSubjects() {
             const container = document.getElementById('subjectsListContainer');
+            if (!container) return;
+            container.innerHTML = '<p style="text-align: center; color: #999;">Loading subjects...</p>';
             try {
                 const response = await fetch(`${API_BASE_URL}/subjects`);
                 if (!response.ok) throw new Error('Failed to fetch subjects');
                 const subjects = await response.json();
 
-                if (subjects.length === 0) {
+                if (!subjects || subjects.length === 0) {
                     container.innerHTML = '<p style="text-align: center; color: #999;">No subjects found. Add one above.</p>';
                     return;
                 }
@@ -593,8 +606,8 @@
                     <div class="subject-item">
                         <div class="subject-header">
                             <div>
-                                <strong style="font-size: 1.1em;">${subject.name}</strong>
-                                <div style="font-size: 0.9em; color: #666;">${subject.description || ''}</div>
+                                <strong style="font-size: 1.1em;">${escapeHtml(subject.name)}</strong>
+                                <div style="font-size: 0.9em; color: #666;">${escapeHtml(subject.description || '')}</div>
                             </div>
                             <div>
                                 <button data-onclick="editSubject" data-args="['${subject._id}']" class="edit-btn" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">Edit</button>
@@ -607,11 +620,11 @@
                                 <button data-onclick="addTopic" data-args="['${subject._id}']" class="btn-secondary" style="padding: 5px 10px; font-size: 12px;">Add Topic</button>
                             </div>
                             ${subject.topics && subject.topics.length > 0 ? subject.topics.map(topic => `
-                                <div class="topic-item" id="topic-item-${topic._id}">
+                                <div class="topic-item" id="topic-item-${topic._id || topic.name}">
                                     <span class="topic-name">${escapeHtml(topic.name)}</span>
                                     <div>
-                                        <button data-onclick="enableEditTopic" data-args="['${subject._id}', '${topic._id}']" style="color: #4ecdc4; background: none; border: none; cursor: pointer; margin-right: 5px;"><i class="fa-solid fa-pen"></i></button>
-                                        <button data-onclick="deleteTopic" data-args="['${subject._id}', '${topic._id}']" style="color: #ff6b6b; background: none; border: none; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
+                                        <button data-onclick="enableEditTopic" data-args="['${subject._id}', '${topic._id || topic.name}']" style="color: #4ecdc4; background: none; border: none; cursor: pointer; margin-right: 5px;"><i class="fa-solid fa-pen"></i></button>
+                                        <button data-onclick="deleteTopic" data-args="['${subject._id}', '${topic._id || topic.name}']" style="color: #ff6b6b; background: none; border: none; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
                                     </div>
                                 </div>
                             `).join('') : '<div style="color: #999; font-size: 0.9em; font-style: italic;">No topics yet</div>'}
@@ -776,11 +789,11 @@
                     <div class="subject-item">
                         <div class="subject-header">
                             <div>
-                                <strong style="font-size: 1.1em;"><i class="${item.icon}"></i> ${item.text}</strong>
-                                <div style="font-size: 0.9em; color: #666;">Link: ${item.link} | Order: ${item.order}</div>
+                                <strong style="font-size: 1.1em;"><i class="${item.icon}"></i> ${item.name}</strong>
+                                <div style="font-size: 0.9em; color: #666;">Path: ${item.path}</div>
                             </div>
                             <div>
-                                <button data-onclick="editNavItem" data-args="['${item._id}', '${item.text}', '${item.icon}', '${item.link}', ${item.order}]" class="edit-btn" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">Edit</button>
+                                <button data-onclick="editNavItem" data-args="['${item._id}', '${item.name}', '${item.icon}', '${item.path}', 0]" class="edit-btn" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">Edit</button>
                                 <button data-onclick="deleteNavItem" data-args="['${item._id}']" class="delete-btn" style="padding: 5px 10px; font-size: 12px;">Delete</button>
                             </div>
                         </div>
