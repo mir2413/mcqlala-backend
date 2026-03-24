@@ -1,7 +1,7 @@
 
         // Ensure API_BASE_URL is defined
         if (typeof API_BASE_URL === 'undefined') {
-            window.API_BASE_URL = 'http://localhost:3004/api';
+            window.API_BASE_URL = window.location.origin + '/api';
         }
         
         // Store original fetch

@@ -1,5 +1,5 @@
-// API Base URL
-const API_BASE_URL = 'http://localhost:3004/api';
+// API Base URL - dynamically uses current domain
+const API_BASE_URL = window.location.origin + '/api';
 
 // Globally override fetch to strictly include credentials (JWT cookie)
 const originalFetch = window.fetch;

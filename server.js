@@ -116,8 +116,9 @@ app.use(helmet({
 app.use(cookieParser());
 
 // CORS Middleware - Must be configured before routes
+const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3004', 'https://mcqlala.in'];
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3004',
+    origin: corsOrigins,
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'] 
 }));
