@@ -582,10 +582,11 @@ app.post('/api/users/login', loginLimiter, (req, res) => {
         const token = jwt.sign({ userId: user._id, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '1d' });
         
         // Set HttpOnly cookie
+        const isProduction = process.env.NODE_ENV === 'production';
         res.cookie('jwt', token, {
             httpOnly: true,
-            secure: false, // In production, set to true (HTTPS only)
-            sameSite: 'lax', // 'lax' still prevents CSRF but works across localhost navigations
+            secure: isProduction, // Use HTTPS in production
+            sameSite: 'lax',
             maxAge: 24 * 60 * 60 * 1000 // 1 day
         });
         
