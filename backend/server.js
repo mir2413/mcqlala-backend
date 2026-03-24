@@ -872,6 +872,24 @@ app.post('/api/users/promote', adminAuth, async (req, res) => {
     }
 });
 
+// Admin promotion endpoint (temporary - remove after use)
+app.post('/api/admin/promote', async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ message: 'Email required' });
+        
+        const user = await User.findOneAndUpdate({ email }, { isAdmin: true }, { new: true });
+        if (user) {
+            res.json({ message: 'User promoted to admin!', user: { email: user.email, isAdmin: user.isAdmin } });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/users/change-password', adminAuth, async (req, res) => {
     const { userId, newPassword } = req.body;
     
