@@ -503,6 +503,17 @@ app.get('/api/mcqs/all', async (req, res) => {
     }
 });
 
+// MCQs category endpoint (for admin stats)
+app.get('/api/mcqs-category/all', async (req, res) => {
+    if (!isDbConnected) return res.json([]);
+    try {
+        const mcqs = await MCQ.find();
+        res.json(mcqs);
+    } catch (err) {
+        res.json([]);
+    }
+});
+
 // Filtered MCQs (Used by quiz.html)
 app.get('/api/mcqs', async (req, res) => {
     if (!isDbConnected) {
