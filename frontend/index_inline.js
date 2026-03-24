@@ -18,10 +18,11 @@
                     adminBtn.onclick = () => window.location.href = 'admin.html';
                     document.getElementById('userProfile').insertBefore(adminBtn, document.querySelector('#userProfile .logout-btn'));
                 }
-
-                await loadSubjectsAndRender();
-                document.getElementById('categorySelect').addEventListener('change', loadTopicsForFilter);
             }
+            
+            // Load subjects for all users (logged in or not)
+            await loadSubjectsAndRender();
+            document.getElementById('categorySelect').addEventListener('change', loadTopicsForFilter);
         });
 
         function escapeJs(str) {
