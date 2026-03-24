@@ -493,8 +493,7 @@ app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, (req, res) => 
 });
 
 // MCQ Routes
-app.get('/api/mcqs/all', (req, res) => res.json(mcqs));
-app.get('/api/mcqs-category/all', async (req, res) => {
+app.get('/api/mcqs/all', async (req, res) => {
     if (!isDbConnected) return res.json([]);
     try {
         const mcqs = await MCQ.find();
@@ -574,41 +573,72 @@ app.post('/api/contact', async (req, res) => {
     }
 });
 
-app.put('/api/contact/:id/read', adminAuth, (req, res) => {
-    const msg = messages.find(m => m._id === req.params.id);
-    if (msg) {
-        msg.read = true;
-        saveData();
-        res.json(msg);
-    } else {
-        res.status(404).json({ message: 'Message not found' });
+app.put('/api/contact/:id/read', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        const msg = await Message.findByIdAndUpdate(req.params.id, { read: true }, { new: true });
+        if (msg) res.json(msg);
+        else res.status(404).json({ message: 'Message not found' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-app.delete('/api/contact/:id', adminAuth, (req, res) => {
-    messages = messages.filter(m => m._id !== req.params.id);
-    saveData();
-    res.json({ message: 'Deleted' });
+app.delete('/api/contact/:id', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        await Message.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.post('/api/contact/bulk-delete', adminAuth, (req, res) => {
-    const { ids } = req.body;
-    if (Array.isArray(ids)) {
-        messages = messages.filter(m => !ids.includes(m._id));
-        saveData();
-        res.json({ message: 'Messages deleted' });
-    } else {
-        res.status(400).json({ message: 'Invalid request' });
+app.post('/api/contact/bulk-delete', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        const { ids } = req.body;
+        if (Array.isArray(ids)) {
+            await Message.deleteMany({ _id: { $in: ids } });
+            res.json({ message: 'Messages deleted' });
+        } else {
+            res.status(400).json({ message: 'Invalid request' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
 // Settings Routes
-app.get('/api/settings', (req, res) => res.json(settings));
-app.post('/api/settings', adminAuth, (req, res) => {
-    if (req.body.title) settings.title = req.body.title;
-    if (req.body.footer) settings.footer = req.body.footer;
-    saveData();
-    res.json(settings);
+app.get('/api/settings', async (req, res) => {
+    if (!isDbConnected) return res.json({ title: 'MCQLala', footer: '© 2026 MCQLala' });
+    try {
+        const settings = await Setting.findOne();
+        if (!settings) {
+            const defaultSettings = await Setting.create({ title: 'MCQLala', footer: '© 2026 MCQLala' });
+            return res.json(defaultSettings);
+        }
+        res.json(settings);
+    } catch (err) {
+        res.json({ title: 'MCQLala', footer: '© 2026 MCQLala' });
+    }
+});
+
+app.post('/api/settings', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        let settings = await Setting.findOne();
+        if (!settings) {
+            settings = await Setting.create(req.body);
+        } else {
+            if (req.body.title) settings.title = req.body.title;
+            if (req.body.footer) settings.footer = req.body.footer;
+            await settings.save();
+        }
+        res.json(settings);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // PDF Routes
@@ -639,26 +669,63 @@ app.delete('/api/pdfs/:filename', adminAuth, (req, res) => {
 });
 
 // Nav Items Routes
-app.get('/api/navitems', (req, res) => res.json(navItems));
-app.post('/api/navitems', adminAuth, (req, res) => {
-    const item = { _id: Date.now().toString(), ...req.body };
-    navItems.push(item);
-    saveData();
-    res.json(item);
+app.get('/api/navitems', async (req, res) => {
+    if (!isDbConnected) {
+        // Return default nav items if database not connected
+        return res.json([
+            { name: 'Home', path: '/', icon: 'fa fa-home' },
+            { name: 'Admin Panel', path: '/admin.html', icon: 'fa fa-cogs' },
+            { name: 'Quiz', path: '/quiz.html', icon: 'fa fa-question-circle' },
+            { name: 'Leaderboard', path: '/leaderboard.html', icon: 'fa fa-trophy' }
+        ]);
+    }
+    try {
+        const items = await NavItem.find();
+        if (items.length === 0) {
+            // Create default items
+            const defaults = await NavItem.create([
+                { name: 'Home', path: '/', icon: 'fa fa-home' },
+                { name: 'Admin Panel', path: '/admin.html', icon: 'fa fa-cogs' },
+                { name: 'Quiz', path: '/quiz.html', icon: 'fa fa-question-circle' },
+                { name: 'Leaderboard', path: '/leaderboard.html', icon: 'fa fa-trophy' }
+            ]);
+            return res.json(defaults);
+        }
+        res.json(items);
+    } catch (err) {
+        res.json([]);
+    }
 });
 
-app.put('/api/navitems/:id', adminAuth, (req, res) => {
-    const item = navItems.find(i => i._id === req.params.id);
-    if (!item) return res.status(404).json({ message: 'Nav item not found' });
-    Object.assign(item, req.body);
-    saveData();
-    res.json(item);
+app.post('/api/navitems', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        const item = await NavItem.create(req.body);
+        res.json(item);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.delete('/api/navitems/:id', adminAuth, (req, res) => {
-    navItems = navItems.filter(i => i._id !== req.params.id);
-    saveData();
-    res.json({ message: 'Deleted' });
+app.put('/api/navitems/:id', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        const item = await NavItem.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (item) res.json(item);
+        else res.status(404).json({ message: 'Nav item not found' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/navitems/:id', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        await NavItem.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Scores Routes
