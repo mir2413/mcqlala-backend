@@ -1,0 +1,48 @@
+
+        .pdfs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+        .pdf-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .pdf-card:hover {
+            transform: translateY(-5px);
+        }
+        .pdf-icon {
+            font-size: 40px;
+            color: #e74c3c;
+        }
+        .pdf-info h4 {
+            margin: 0 0 5px 0;
+            color: #333;
+            word-break: break-all;
+        }
+        .pdf-info p {
+            margin: 0;
+            color: #666;
+            font-size: 12px;
+        }
+        .pdf-download {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #667eea;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .pdf-download:hover {
+            background: #5568d3;
+        }
+    

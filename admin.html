@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - mcqlala</title>
+    <link rel="stylesheet" href="style.css?v=1774347106158">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous">
+    <script src="papaparse.min.js?v=1774347106158"></script>
+    
+    <link rel="stylesheet" href="admin_inline.css?v=1774347106158">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand" data-href="index.html" style="cursor:pointer;" style="cursor: pointer;">
+            <div class="logo-box">MCQ</div>
+            <div class="brand-text">
+                <h1>mcqlala Admin</h1>
+                <p>Manage your MCQ platform</p>
+            </div>
+        </div>
+        <div class="user-profile">
+            <button data-onclick="goBack" style="padding: 8px 15px; cursor: pointer; background: #667eea; color: white; border: none; border-radius: 4px;">Back to Site</button>
+        </div>
+    </nav>
+
+    <div class="admin-container" id="adminPanel" style="display: none;">
+        <div class="admin-header">
+            <h2 style="margin: 0;"><i class="fa-solid fa-lock"></i> Admin Panel</h2>
+            <button class="seed-btn" data-onclick="seedData"><i class="fa-solid fa-database"></i> Seed Sample Data</button>
+        </div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="admin-tabs">
+            <button class="tab-btn active" data-onclick="switchTab" data-args="[event, 'add-mcq']"><i class="fa-solid fa-plus"></i> Add MCQ</button>
+            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'view-mcqs']"><i class="fa-solid fa-list"></i> View MCQs</button>
+            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'bulk-upload']"><i class="fa-solid fa-file-csv"></i> Bulk Upload</button>
+            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'manage-nav']"><i class="fa-solid fa-bars"></i> Manage Navigation</button>
+            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'manage-subjects']"><i class="fa-solid fa-book"></i> Manage Subjects</button>
+            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'manage-users']"><i class="fa-solid fa-users"></i> Manage Users</button>
+            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'view-messages']"><i class="fa-solid fa-envelope"></i> Messages <span id="msgBadge" class="badge" style="display:none"></span></button>
+            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'manage-pdfs']"><i class="fa-solid fa-file-pdf"></i> Manage PDFs</button>
+            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'settings']"><i class="fa-solid fa-cog"></i> Settings</button>
+        </div>
+
+        <div id="successMessage" class="success-message"></div>
+        <div id="errorMessage" class="error-message"></div>
+
+        <!-- Add MCQ Tab -->
+        <div id="add-mcq" class="tab-content active">
+            <h3>Add New MCQ Question</h3>
+            <form id="addMCQForm">
+                <div class="form-grid">
+                    <div>
+                        <label for="category">Category</label>
+                        <select id="category" name="category" data-onchange="loadTopics" required style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%;">
+                            <option value="">Loading categories...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="topic">Topic</label>
+                        <select id="topic" name="topic" data-onchange="checkNewTopic" data-args="[this]" required style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%;">
+                            <option value="">Select Topic</option>
+                            <option value="__NEW__" style="font-weight: bold; color: #667eea;">+ Add New Topic</option>
+                        </select>
+                        <label for="newTopicInput" style="display: none; margin-top: 10px;">New Topic Name</label>
+                        <input type="text" id="newTopicInput" name="newTopicInput" placeholder="Enter new topic name" style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%;">
+                    </div>
+                </div>
+
+                <div class="form-grid form-full">
+                    <div>
+                        <label for="question">Question</label>
+                        <textarea id="question" name="question" required placeholder="Enter the MCQ question" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 100px; width: 100%;"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-grid form-full">
+                    <div>
+                        <label for="option0">Options</label>
+                        <div class="options-input" id="optionsContainer">
+                            <div class="option-item">
+                                <input type="text" id="option0" name="option" class="option-input" placeholder="Option 1" required>
+                                <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>
+                            </div>
+                            <div class="option-item">
+                                <input type="text" id="option1" name="option" class="option-input" placeholder="Option 2" required>
+                                <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>
+                            </div>
+                            <div class="option-item">
+                                <input type="text" id="option2" name="option" class="option-input" placeholder="Option 3" required>
+                                <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>
+                            </div>
+                            <div class="option-item">
+                                <input type="text" id="option3" name="option" class="option-input" placeholder="Option 4" required>
+                                <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>
+                            </div>
+                        </div>
+                        <button type="button" class="add-option-btn" data-onclick="addOption">+ Add Option</button>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div>
+                        <label for="correctAnswer">Correct Answer (0-based index)</label>
+                        <input type="number" id="correctAnswer" name="correctAnswer" min="0" required placeholder="0 = first option, 1 = second..." style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%;">
+                    </div>
+                    <div>
+                        <label for="difficulty">Difficulty</label>
+                        <select id="difficulty" name="difficulty" required style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%;">
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid form-full">
+                    <div>
+                        <label for="explanation">Explanation (Optional)</label>
+                        <textarea id="explanation" name="explanation" placeholder="Explain why this is the correct answer" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-height: 80px; width: 100%;"></textarea>
+                    </div>
+                </div>
+
+                <button type="button" id="submitMCQBtn" class="btn-primary" style="width: 100%; padding: 12px; margin-top: 20px;" data-onclick="submitMCQ"><i class="fa-solid fa-plus"></i> Add MCQ</button>
+            </form>
+        </div>
+
+        <!-- View MCQs Tab -->
+        <div id="view-mcqs" class="tab-content">
+            <h3>All Questions</h3>
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
+                <label for="searchMCQ" style="display: none;">Search</label>
+                <input type="text" id="searchMCQ" name="searchMCQ" placeholder="Search questions..." style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; flex: 1; min-width: 250px;">
+                <select id="filterCategory" name="filterCategory" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-width: 200px;"><option value="">All Categories</option></select>
+                <select id="filterTopic" name="filterTopic" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-width: 200px;"><option value="">All Topics</option></select>
+            </div>
+            <ul class="mcq-list" id="mcqList">
+                <li style="text-align: center; color: #999; padding: 20px;">Loading questions...</li>
+            </ul>
+        </div>
+
+        <!-- Bulk Upload Tab -->
+        <div id="bulk-upload" class="tab-content">
+            <h3>Bulk Upload MCQs</h3>
+            <p>Upload a CSV file with the following columns: <code>Category, Topic, Question, Option1, Option2, Option3, Option4, CorrectAnswerIndex, Difficulty, Explanation</code></p>
+            <p><small>Note: CorrectAnswerIndex should be 0 for Option1, 1 for Option2, etc.</small></p>
+            
+            <div style="margin: 20px 0; padding: 20px; border: 2px dashed #ddd; border-radius: 10px; text-align: center;">
+                <input type="file" id="csvFileInput" name="csvFileInput" accept=".csv" style="display: none;" data-onchange="updateFileName">
+                <button data-onclick="triggerCsvUpload" class="btn-secondary" style="margin-right: 10px;"><i class="fa-solid fa-folder-open"></i> Select CSV File</button>
+                <span id="fileName">No file selected</span>
+            </div>
+
+            <button data-onclick="uploadBulkMCQs" class="btn-primary"><i class="fa-solid fa-upload"></i> Upload & Process</button>
+            <button data-onclick="downloadTemplate" class="btn-secondary" style="margin-left: 10px;"><i class="fa-solid fa-download"></i> Download Template</button>
+
+            <div id="bulkProgress" style="margin-top: 20px; display: none;">
+                <p>Processing: <span id="processedCount">0</span> / <span id="totalCount">0</span></p>
+                <div class="progress-bar" style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 10px;"><div id="bulkProgressBar" style="width: 0%; height: 100%; background: #667eea; transition: width 0.3s;"></div></div>
+                <div id="bulkLog" style="max-height: 200px; overflow-y: auto; background: #f9f9f9; padding: 10px; border: 1px solid #eee; font-size: 12px; font-family: monospace;"></div>
+            </div>
+        </div>
+
+        <!-- Manage Subjects Tab -->
+        <div id="manage-subjects" class="tab-content">
+            <h3>Manage Subjects & Topics</h3>
+            <div class="form-grid">
+                <div style="grid-column: 1 / -1; display: flex; gap: 10px;">
+                    <label for="newSubjectName" style="display: none;">Subject Name</label>
+                    <input type="text" id="newSubjectName" name="newSubjectName" placeholder="New Subject Name (e.g., JKSSB History)" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; flex: 1;">
+                    <label for="newSubjectDesc" style="display: none;">Subject Description</label>
+                    <input type="text" id="newSubjectDesc" name="newSubjectDesc" placeholder="Description (e.g., Learn history)" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; flex: 1;">
+                    <button data-onclick="addSubject" class="btn-primary"><i class="fa-solid fa-plus"></i> Add Subject</button>
+                </div>
+            </div>
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            <div id="subjectsListContainer">
+                <p style="text-align: center; color: #999;">Loading subjects...</p>
+            </div>
+        </div>
+
+        <!-- Manage Navigation Tab -->
+        <div id="manage-nav" class="tab-content">
+            <h3>Manage Navigation Links</h3>
+            <div class="form-grid">
+                <div style="grid-column: 1 / -1;">
+                    <h4>Add/Edit Link</h4>
+                    <input type="hidden" id="navItemId">
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <label for="navItemText" style="display: none;">Link Text</label>
+                        <input type="text" id="navItemText" name="navItemText" placeholder="Link Text (e.g., Home)" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; flex: 1; min-width: 150px;">
+                        <label for="navItemIcon" style="display: none;">Icon Class</label>
+                        <input type="text" id="navItemIcon" name="navItemIcon" placeholder="Icon Class (e.g., fa-solid fa-house)" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; flex: 1; min-width: 200px;">
+                        <label for="navItemLink" style="display: none;">Link URL</label>
+                        <input type="text" id="navItemLink" name="navItemLink" placeholder="Link URL (e.g., index.html)" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; flex: 1; min-width: 150px;">
+                        <label for="navItemOrder" style="display: none;">Order</label>
+                        <input type="number" id="navItemOrder" name="navItemOrder" placeholder="Order" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 80px;">
+                    </div>
+                    <button data-onclick="saveNavItem" class="btn-primary" id="saveNavItemBtn"><i class="fa-solid fa-plus"></i> Add Link</button>
+                    <button data-onclick="resetNavForm" class="btn-secondary" id="cancelNavEditBtn" style="display: none; margin-left: 10px;">Cancel Edit</button>
+                </div>
+            </div>
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            <div id="navItemsListContainer"></div>
+        </div>
+
+        <!-- Manage Users Tab -->
+        <div id="manage-users" class="tab-content">
+            <h3>Registered Users</h3>
+            <div style="margin-bottom: 20px;">
+                <label for="userSearchInput" style="display: none;">Search Users</label>
+                <input type="text" id="userSearchInput" name="userSearchInput" placeholder="Search by username or email..." style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%;">
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead>
+                        <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                            <th style="padding: 12px; text-align: left;">Username</th>
+                            <th style="padding: 12px; text-align: left;">Email</th>
+                            <th style="padding: 12px; text-align: left;">Role</th>
+                            <th style="padding: 12px; text-align: left;">Joined</th>
+                            <th style="padding: 12px; text-align: left;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersListBody">
+                        <tr><td colspan="5" style="text-align: center; padding: 20px;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px; align-items: center;">
+                <button id="prevUserPage" class="btn-secondary" disabled>Previous</button>
+                <span id="userPageInfo">Page 1 of 1</span>
+                <button id="nextUserPage" class="btn-secondary" disabled>Next</button>
+            </div>
+        </div>
+
+        <!-- View Messages Tab -->
+        <div id="view-messages" class="tab-content">
+            <h3>Inbox</h3>
+            <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                <button data-onclick="deleteSelectedMessages" class="delete-btn" style="padding: 8px 15px; font-size: 14px;"><i class="fa-solid fa-trash"></i> Delete Selected</button>
+                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; margin-left: 10px; font-size: 14px; color: #555;">
+                    <input type="checkbox" id="selectAllMessages" name="selectAllMessages" data-onchange="toggleSelectAllMessages" data-args="[this]" style="width: 16px; height: 16px; cursor: pointer;"> Select All
+                </label>
+            </div>
+            <div id="messagesContainer">Loading...</div>
+        </div>
+
+        <!-- Manage PDFs Tab -->
+        <div id="manage-pdfs" class="tab-content">
+            <h3>Manage PDFs</h3>
+            <div style="margin-bottom: 20px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                <h4>Upload New PDF</h4>
+                <form id="uploadPdfForm" enctype="multipart/form-data" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <label for="pdfFile" style="display: none;">PDF File</label>
+                    <input type="file" id="pdfFile" name="pdfFile" accept=".pdf" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <button type="button" class="btn-primary" style="padding: 10px 20px;" data-onclick="uploadPdf"><i class="fa-solid fa-upload"></i> Upload PDF</button>
+                </form>
+                <p style="color: #666; font-size: 12px; margin-top: 5px;">Only PDF files are allowed</p>
+            </div>
+            <h4>Uploaded PDFs</h4>
+            <div id="pdfsList">Loading...</div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <h3>Admin Settings</h3>
+            <div class="form-grid">
+                <div style="grid-column: 1 / -1; max-width: 500px;">
+                    <h4>Change Password</h4>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Enter a new strong password for your account.</p>
+                    <label for="newAdminPassword" style="display: none;">New Password</label>
+                    <input type="password" id="newAdminPassword" name="newAdminPassword" placeholder="New Password" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; margin-bottom: 10px;">
+                    <button data-onclick="changeAdminPassword" class="btn-primary">Update Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=1774347571626"></script>
+    
+    <script src="admin_inline.js?v=1774347571626"></script>
+</body>
+</html>

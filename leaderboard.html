@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard - mcqlala</title>
+    <link rel="stylesheet" href="style.css?v=1774346226095">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=1774346226095" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand" data-href="index.html" style="cursor:pointer;" style="cursor: pointer;">
+            <div class="logo-box">MCQ</div>
+            <div class="brand-text">
+                <h1>mcqlala</h1>
+                <p>For all exams (UPSC, PSC, JKSSB, SSC)</p>
+            </div>
+        </div>
+        <ul class="nav-links">
+            <!-- Items will be loaded dynamically -->
+        </ul>
+        <div class="user-profile">
+            <i class="fa-solid fa-user"></i>
+            <span id="username">User</span>
+            <button data-onclick="logout" class="logout-btn">Logout</button>
+        </div>
+        <div class="hamburger" data-onclick="toggleMobileMenu"><i class="fa-solid fa-bars"></i></div>
+    </nav>
+
+    <div class="leaderboard-container">
+        <div class="leaderboard-header">
+            <h2>Leaderboard</h2>
+            <p id="topicName"></p>
+        </div>
+
+        <table class="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>User</th>
+                    <th>Score</th>
+                    <th>Accuracy</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody">
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 20px;">Loading leaderboard...</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button data-onclick="goHome" class="btn-primary">Back to Home</button>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-col brand-col">
+                <div class="logo-box" style="margin-bottom:10px;">MCQ</div>
+                <h3>mcqlala</h3>
+                <p class="brand-desc">For all exams (UPSC, PSC, SSC, JKSSB).</p>
+                <div class="social-links">
+                    <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Explore</h3>
+                <ul>
+                    <li data-href="index.html" style="cursor:pointer;">Home</li>
+                    <li data-href="login.html" style="cursor:pointer;">Login</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <ul>
+                    <li>About</li>
+                    <li>Privacy</li>
+                    <li>Terms and Conditions</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <div class="footer-contact-header">
+                    <h3>Contact Us</h3>
+                    <div class="footer-contact-btn" data-onclick="toggleContactPopup" title="Contact Us">
+                        <i class="fa-solid fa-envelope"></i>
+                    </div>
+                </div>
+                <ul>
+                    <li>Email: admin@mcqlala.com</li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Contact Popup -->
+    <div id="contactPopup" class="contact-popup">
+        <h3 style="margin-bottom: 15px; color: #333;">Contact Us</h3>
+        <form class="footer-form" data-onsubmit="submitContactForm">
+            <input type="text" placeholder="Your Name" required>
+            <input type="email" placeholder="Your Email" required>
+            <textarea placeholder="Your Message" required rows="3"></textarea>
+            <button type="submit">Send Message</button>
+        </form>
+    </div>
+
+    <script src="app.js?v=1774346226095"></script>
+    
+    <script src="leaderboard_inline.js?v=1774346226095"></script>
+</body>
+</html>

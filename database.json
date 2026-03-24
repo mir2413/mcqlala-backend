@@ -1,0 +1,468 @@
+{
+  "users": [
+    {
+      "_id": "1",
+      "username": "tawseef2414",
+      "email": "tawseef2414@gmail.com",
+      "password": "$2b$10$TtjBxJLDNy1oQr8WvHZM/uZ6d1VLDOWH0VHDMombiR.GkFbtCbfte",
+      "isAdmin": true,
+      "createdAt": "2026-02-08T14:38:36.457Z",
+      "resetToken": "25f2f8a651a2b74bcfa926b983feb32a9f11242ec7bc7158",
+      "resetTokenExpiry": 1774273395791
+    },
+    {
+      "_id": "1772618840847",
+      "username": "mir ",
+      "email": "abc@gmail.com",
+      "password": "$2b$10$Wq0JlC.CK.Cx41U6L/ze7.RY8jkV4oYHslrHCgThbxfqOOm1nTXu6",
+      "isAdmin": false,
+      "createdAt": "2026-03-04T10:07:20.847Z"
+    },
+    {
+      "_id": "1773915352031",
+      "username": "mir",
+      "email": "tawseef2413@gmail.com",
+      "password": "$2b$10$e66xZL7bxt3x5Mnn260K2eaHcgqhTXq6zjQrfMvmg0SPdeWKIsvCW",
+      "isAdmin": false,
+      "createdAt": "2026-03-19T10:15:52.031Z",
+      "resetToken": "901b8c37ce87e08346dd9abff0f32af66c1f0368337ee0c0",
+      "resetTokenExpiry": 1774274348862
+    }
+  ],
+  "subjects": [
+    {
+      "_id": "1",
+      "name": "General Knowledge",
+      "description": "Basic GK",
+      "topics": [
+        {
+          "_id": "t1",
+          "name": "History"
+        },
+        {
+          "_id": "t2",
+          "name": "Geography"
+        }
+      ]
+    },
+    {
+      "_id": "1774260990746",
+      "name": "math",
+      "description": "math is lif",
+      "topics": [
+        {
+          "_id": "1774261045110",
+          "name": "vsd"
+        }
+      ]
+    },
+    {
+      "_id": "1774268411175",
+      "name": "bq",
+      "description": "asdsd",
+      "topics": [
+        {
+          "_id": "1774279579299",
+          "name": "hjvh"
+        }
+      ]
+    }
+  ],
+  "mcqs": [
+    {
+      "_id": "1",
+      "question": "What is 2+2?",
+      "options": [
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "correctAnswer": 1,
+      "category": "General Knowledge",
+      "topic": "Math",
+      "difficulty": "easy"
+    },
+    {
+      "_id": "2",
+      "question": "Capital of India?",
+      "options": [
+        "Mumbai",
+        "Delhi",
+        "Chennai",
+        "Kolkata"
+      ],
+      "correctAnswer": 1,
+      "category": "General Knowledge",
+      "topic": "Geography",
+      "difficulty": "easy"
+    },
+    {
+      "_id": "1770562535816",
+      "category": "General Knowledge",
+      "topic": "Geography",
+      "question": "hhhh",
+      "options": [
+        "hhh",
+        "jjj"
+      ],
+      "correctAnswer": 1,
+      "explanation": "hhhh",
+      "difficulty": "easy"
+    },
+    {
+      "_id": "1772619853502",
+      "category": "General Knowledge",
+      "topic": "Geography",
+      "question": "ppppp",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "correctAnswer": 1,
+      "explanation": "dsufeid sdjfbdsi sidjfbisdjf",
+      "difficulty": "easy"
+    },
+    {
+      "_id": "1774254169148",
+      "category": "General Knowledge",
+      "topic": "Math",
+      "question": "Test question",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctAnswer": 0
+    },
+    {
+      "_id": "1774254241245",
+      "category": "General Knowledge",
+      "topic": "History",
+      "question": "Test new question from admin",
+      "options": [
+        "Answer A",
+        "Answer B",
+        "Answer C",
+        "Answer D"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Test explanation"
+    },
+    {
+      "_id": "1774254518092",
+      "category": "General Knowledge",
+      "topic": "Geography",
+      "question": "What is the capital of France?",
+      "options": [
+        "London",
+        "Paris",
+        "Berlin",
+        "Madrid"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Paris is the capital of France."
+    },
+    {
+      "_id": "1774261967371",
+      "category": "General Knowledge",
+      "topic": "History",
+      "question": "Test question",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "correctAnswer": 0,
+      "difficulty": "easy"
+    },
+    {
+      "_id": "1774268268927",
+      "category": "math",
+      "topic": "vsd",
+      "question": "zzsc zxczcd",
+      "options": [
+        "dfd",
+        "dvd",
+        "dvsd",
+        "sdfsdf"
+      ],
+      "correctAnswer": 2,
+      "explanation": "ascasccasc",
+      "difficulty": "easy"
+    },
+    {
+      "_id": "1774273556735",
+      "category": "math",
+      "topic": "vsd",
+      "question": "zxZXZ",
+      "options": [
+        "dfdz",
+        "dvd",
+        "dvsd",
+        "sdfsdf"
+      ],
+      "correctAnswer": 2,
+      "explanation": "zxzxx",
+      "difficulty": "easy"
+    },
+    {
+      "_id": "1774279600789",
+      "category": "bq",
+      "topic": "hjvh",
+      "question": "hvkjbk",
+      "options": [
+        "dfdz",
+        "dvd",
+        "dvsd",
+        "sdfsdf"
+      ],
+      "correctAnswer": 2,
+      "explanation": "jboljn",
+      "difficulty": "easy"
+    }
+  ],
+  "navItems": [
+    {
+      "_id": "1770563573547",
+      "text": "Home",
+      "icon": "fa-solid fa-house",
+      "link": "index.html",
+      "order": 0
+    },
+    {
+      "_id": "1770563573548",
+      "text": "Study Materials",
+      "icon": "fa-solid fa-book",
+      "link": "pdfs.html",
+      "order": 1
+    }
+  ],
+  "messages": [],
+  "scores": [
+    {
+      "_id": "1774248006259",
+      "submittedAt": "2026-03-23T06:40:06.259Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "Geography",
+      "category": "General Knowledge",
+      "score": 0,
+      "totalQuestions": 3,
+      "percentage": 0,
+      "answers": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "_id": "1774248177720",
+      "submittedAt": "2026-03-23T06:42:57.720Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "Geography",
+      "category": "General Knowledge",
+      "score": 0,
+      "totalQuestions": 3,
+      "percentage": 0,
+      "answers": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "_id": "1774248543857",
+      "submittedAt": "2026-03-23T06:49:03.857Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "Geography",
+      "category": "General Knowledge",
+      "score": 0,
+      "totalQuestions": 3,
+      "percentage": 0,
+      "answers": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "_id": "1774249413718",
+      "submittedAt": "2026-03-23T07:03:33.718Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "Geography",
+      "category": "General Knowledge",
+      "score": 0,
+      "totalQuestions": 3,
+      "percentage": 0,
+      "answers": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "_id": "1774250004892",
+      "submittedAt": "2026-03-23T07:13:24.892Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "Geography",
+      "category": "General Knowledge",
+      "score": 0,
+      "totalQuestions": 3,
+      "percentage": 0,
+      "answers": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "_id": "1774251380559",
+      "submittedAt": "2026-03-23T07:36:20.559Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "Geography",
+      "category": "General Knowledge",
+      "score": 0,
+      "totalQuestions": 3,
+      "percentage": 0,
+      "answers": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "_id": "1774255371075",
+      "submittedAt": "2026-03-23T08:42:51.075Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "Geography",
+      "category": "General Knowledge",
+      "score": 0,
+      "totalQuestions": 4,
+      "percentage": 0,
+      "answers": [
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "_id": "1774260759488",
+      "submittedAt": "2026-03-23T10:12:39.488Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "History",
+      "category": "General Knowledge",
+      "score": 1,
+      "totalQuestions": 1,
+      "percentage": 100,
+      "answers": [
+        0
+      ]
+    },
+    {
+      "_id": "1774277132124",
+      "submittedAt": "2026-03-23T14:45:32.124Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "vsd",
+      "category": "math",
+      "score": 0,
+      "totalQuestions": 2,
+      "percentage": 0,
+      "answers": [
+        null,
+        null
+      ]
+    },
+    {
+      "_id": "1774277159840",
+      "submittedAt": "2026-03-23T14:45:59.840Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "History",
+      "category": "General Knowledge",
+      "score": 0,
+      "totalQuestions": 2,
+      "percentage": 0,
+      "answers": [
+        null,
+        null
+      ]
+    },
+    {
+      "_id": "1774277564629",
+      "submittedAt": "2026-03-23T14:52:44.629Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "History",
+      "category": "General Knowledge",
+      "score": 0,
+      "totalQuestions": 2,
+      "percentage": 0,
+      "answers": [
+        null,
+        null
+      ]
+    },
+    {
+      "_id": "1774280081121",
+      "submittedAt": "2026-03-23T15:34:41.121Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "hjvh",
+      "category": "bq",
+      "score": 0,
+      "totalQuestions": 1,
+      "percentage": 0,
+      "answers": [
+        1
+      ]
+    },
+    {
+      "_id": "1774329935190",
+      "submittedAt": "2026-03-24T05:25:35.190Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "History",
+      "category": "General Knowledge",
+      "score": 1,
+      "totalQuestions": 2,
+      "percentage": 50,
+      "answers": [
+        0,
+        2
+      ]
+    },
+    {
+      "_id": "1774330273536",
+      "submittedAt": "2026-03-24T05:31:13.536Z",
+      "userId": "1",
+      "username": "tawseef2414",
+      "topic": "vsd",
+      "category": "math",
+      "score": 1,
+      "totalQuestions": 2,
+      "percentage": 50,
+      "answers": [
+        1,
+        2
+      ]
+    }
+  ],
+  "settings": {
+    "title": "MCQLala",
+    "footer": "© 2026 MCQLala. All Rights Reserved."
+  }
+}

@@ -1,0 +1,191 @@
+
+        .quiz-questions-container {
+            display: grid;
+            gap: 25px;
+        }
+
+        .quiz-question {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            page-break-inside: avoid;
+        }
+
+        .quiz-question h4 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .quiz-question-number {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quiz-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quiz-option:hover {
+            border-color: #667eea;
+            background: #f0f0f0;
+        }
+
+        .quiz-option input[type="radio"] {
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .quiz-option span {
+            flex: 1;
+            color: #333;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 30px;
+            align-items: center;
+        }
+
+        .pagination button {
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .pagination button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .pagination span {
+            color: #666;
+            font-weight: 600;
+        }
+
+        .page-info {
+            text-align: center;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .quiz-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .quiz-actions button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #21cc12, #0aab0a);
+            color: white;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(10, 171, 10, 0.4);
+        }
+
+        .save-progress {
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .progress-summary {
+            padding: 15px;
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .progress-summary span {
+            color: #ff6f00;
+        }
+
+        .spinner-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+        }
+
+        .spinner {
+            border: 6px solid #f3f3f3; /* Light grey */
+            border-top: 6px solid #667eea; /* Purple */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        .quiz-option.correct {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            color: #155724;
+        }
+
+        .quiz-option.wrong {
+            background-color: #f8d7da !important;
+            border-color: #dc3545 !important;
+            color: #721c24;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    

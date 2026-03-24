@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mcqlala</title>
+    <link rel="stylesheet" href="style.css?v=1774346226095">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=1774346226095" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand" data-href="index.html" style="cursor:pointer;" style="cursor: pointer;">
+            <div class="logo-box">MCQ</div>
+            <div class="brand-text">
+                <h1>mcqlala</h1>
+                <p>For all exams (UPSC, PSC, JKSSB, SSC)</p>
+            </div>
+        </div>
+
+        <ul class="nav-links">
+            <!-- Items will be loaded dynamically -->
+        </ul>
+
+        <div class="user-profile" id="userProfile">
+            <i class="fa-solid fa-user"></i>
+            <span id="username">User</span>
+            <button data-onclick="logout" class="logout-btn">Logout</button>
+        </div>
+        <div class="hamburger" data-onclick="toggleMobileMenu"><i class="fa-solid fa-bars"></i></div>
+    </nav>
+
+    <div class="main-container">
+        <h2 class="hero-title">mcqlala</h2>
+        <p class="hero-subtitle">Practice any topic</p>
+
+        <div class="content-header">
+            <div class="section-title">Subjects</div>
+            <div class="filters" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <select id="categorySelect" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; outline: none;"><option value="">Select Category</option></select>
+                <select id="topicSelect" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; outline: none;"><option value="">Select Topic</option></select>
+                <button data-onclick="startSelectedQuiz" class="btn-primary" style="padding: 8px 15px; font-size: 14px;">Start Quiz</button>
+            </div>
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="searchInput" placeholder="Search subject..." data-onkeyup="filterCards">
+            </div>
+        </div>
+
+        <div id="loadingError" style="display: none; color: #721c24; text-align: center; padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; margin-bottom: 15px;"></div>
+
+        <div class="card-grid" id="cardGrid">            
+            <!-- Cards will be loaded dynamically from API -->
+            <div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #666;">Loading subjects...</div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-col brand-col">
+                <div class="logo-box" style="margin-bottom:10px;">MCQ</div>
+                <h3>mcqlala</h3>
+                <p class="brand-desc">For all exams (UPSC, PSC, SSC, JKSSB).</p>
+                <div class="social-links">
+                    <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Explore</h3>
+                <ul>
+                    <li data-href="index.html" style="cursor:pointer;">Home</li>
+                    <li data-href="login.html" style="cursor:pointer;">Login</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <ul>
+                    <li>About</li>
+                    <li>Privacy</li>
+                    <li>Terms and Conditions</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <div class="footer-contact-header">
+                    <h3>Contact Us</h3>
+                    <div class="footer-contact-btn" data-onclick="toggleContactPopup" title="Contact Us">
+                        <i class="fa-solid fa-envelope"></i>
+                    </div>
+                </div>
+                <ul>
+                    <li>Email: admin@mcqlala.com</li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Contact Popup -->
+    <div id="contactPopup" class="contact-popup">
+        <h3 style="margin-bottom: 15px; color: #333;">Contact Us</h3>
+        <form class="footer-form" data-onsubmit="submitContactForm">
+            <input type="text" placeholder="Your Name" required>
+            <input type="email" placeholder="Your Email" required>
+            <textarea placeholder="Your Message" required rows="3"></textarea>
+            <button type="submit">Send Message</button>
+        </form>
+    </div>
+
+    <script src="app.js?v=1774346226095"></script>
+    
+
+    <script src="mcq_inline.js?v=1774346226095"></script>
+</body>
+</html>

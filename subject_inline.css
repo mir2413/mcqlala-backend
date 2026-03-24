@@ -1,0 +1,95 @@
+
+        .topics-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        .subject-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .subject-header h2 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .subject-header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .back-btn:hover {
+            color: #5568d3;
+        }
+        .topics-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .topic-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .topic-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+        .topic-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .topic-card:hover::before {
+            transform: scaleY(1);
+        }
+        .topic-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 18px;
+        }
+        .topic-card p {
+            color: #666;
+            font-size: 14px;
+            margin: 0;
+        }
+        .topic-card .start-btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .no-topics {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+    
