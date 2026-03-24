@@ -15,12 +15,22 @@ const cookieParser = require('cookie-parser');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-for-mcqlala';
 
+// MongoDB Setup
+let mongoose;
+try {
+    mongoose = require('mongoose');
+} catch (e) {
+    console.error('\n❌ ERROR: The "mongoose" module is missing.');
+    console.error('👉 Please run: npm install mongoose\n');
+    process.exit(1);
+}
+
 let bcryptjs;
 try {
     bcryptjs = require('bcryptjs');
 } catch (e) {
     console.error('\n❌ ERROR: The "bcryptjs" module is missing.');
-    console.error('👉 Please run this command in your terminal: npm install bcryptjs\n');
+    console.error('👉 Please run: npm install bcryptjs\n');
     process.exit(1);
 }
 
@@ -61,6 +71,120 @@ try {
 
 const app = express();
 const PORT = process.env.PORT || 3004;
+
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+    console.error('❌ ERROR: MONGODB_URI environment variable is not set.');
+    console.error('👉 Please set MONGODB_URI in your Render environment variables.');
+    console.error('   Example: mongodb+srv://username:password@cluster.mongodb.net/dbname');
+}
+
+// Mongoose Schemas
+const userSchema = new mongoose.Schema({
+    username: String,
+    email: String,
+    password: String,
+    isAdmin: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now }
+});
+
+const subjectSchema = new mongoose.Schema({
+    name: String,
+    description: String,
+    topics: [{ _id: mongoose.Schema.Types.ObjectId, name: String }]
+});
+
+const mcqSchema = new mongoose.Schema({
+    category: String,
+    topic: String,
+    question: String,
+    options: [String],
+    correctAnswer: Number,
+    explanation: String,
+    difficulty: String,
+    createdAt: { type: Date, default: Date.now }
+});
+
+const scoreSchema = new mongoose.Schema({
+    userId: String,
+    username: String,
+    topic: String,
+    category: String,
+    score: Number,
+    totalQuestions: Number,
+    answers: [Number],
+    createdAt: { type: Date, default: Date.now }
+});
+
+const navItemSchema = new mongoose.Schema({
+    name: String,
+    path: String,
+    icon: String
+});
+
+const messageSchema = new mongoose.Schema({
+    name: String,
+    email: String,
+    message: String,
+    date: { type: Date, default: Date.now },
+    read: { type: Boolean, default: false }
+});
+
+const settingSchema = new mongoose.Schema({
+    title: String,
+    footer: String
+});
+
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+const Subject = mongoose.models.Subject || mongoose.model('Subject', subjectSchema);
+const MCQ = mongoose.models.MCQ || mongoose.model('MCQ', mcqSchema);
+const Score = mongoose.models.Score || mongoose.model('Score', scoreSchema);
+const NavItem = mongoose.models.NavItem || mongoose.model('NavItem', navItemSchema);
+const Message = mongoose.models.Message || mongoose.model('Message', messageSchema);
+const Setting = mongoose.models.Setting || mongoose.model('Setting', settingSchema);
+
+let isDbConnected = false;
+
+// Connect to MongoDB
+async function connectDB() {
+    if (!MONGODB_URI) {
+        console.log('⚠️  Running without MongoDB - data will not persist!');
+        return;
+    }
+    try {
+        await mongoose.connect(MONGODB_URI);
+        console.log('✅ MongoDB connected successfully!');
+        isDbConnected = true;
+        
+        // Create default nav items if none exist
+        const navCount = await NavItem.countDocuments();
+        if (navCount === 0) {
+            await NavItem.create([
+                { name: 'Home', path: '/', icon: 'fa fa-home' },
+                { name: 'Admin Panel', path: '/admin.html', icon: 'fa fa-cogs' },
+                { name: 'Quiz', path: '/quiz.html', icon: 'fa fa-question-circle' },
+                { name: 'Leaderboard', path: '/leaderboard.html', icon: 'fa fa-trophy' }
+            ]);
+        }
+        
+        // Create default subjects if none exist
+        const subjectCount = await Subject.countDocuments();
+        if (subjectCount === 0) {
+            await Subject.create({
+                name: 'General Knowledge',
+                description: 'Basic GK',
+                topics: [{ name: 'History' }, { name: 'Geography' }]
+            });
+        }
+    } catch (err) {
+        console.error('❌ MongoDB connection error:', err.message);
+    }
+}
+
+// Call connect before starting server
+connectDB();
 
 // Trust Proxy (Required for ngrok to detect HTTPS and send HSTS headers)
 app.set('trust proxy', 1);
@@ -187,64 +311,23 @@ const loginLimiter = rateLimit({
 // Enable in production for DDoS protection
 app.use(limiter);
 
-// Database File
-const DB_FILE = path.join(__dirname, 'database.json');
-
-// Data Store (In-memory with file persistence)
-let users = [];
-let subjects = [
-    { _id: '1', name: 'General Knowledge', description: 'Basic GK', topics: [{ _id: 't1', name: 'History' }, { _id: 't2', name: 'Geography' }] }
-];
-let mcqs = [];
-let navItems = [];
-let messages = [];
-let scores = [];
-let settings = { title: 'MCQLala', footer: '© 2026 MCQLala. All Rights Reserved.' };
-
-// Load data from file if exists
-if (fs.existsSync(DB_FILE)) {
-    try {
-        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-        if (data.users) users = data.users;
-        if (data.subjects) subjects = data.subjects;
-        if (data.mcqs) mcqs = data.mcqs;
-        if (data.navItems) navItems = data.navItems;
-        if (data.messages) messages = data.messages;
-        if (data.scores) scores = data.scores;
-        if (data.settings) settings = data.settings;
-        console.log('✅ Database loaded from file.');
-    } catch (e) {
-        console.error('❌ Error loading database:', e);
-    }
-}
-
-// Ensure Default Navigation Items exist
-if (navItems.length === 0) {
-    navItems = [
-        { _id: '1', name: 'Home', path: '/', icon: 'fa fa-home' },
-        { _id: '2', name: 'Admin Panel', path: '/admin.html', icon: 'fa fa-cogs' },
-        { _id: '3', name: 'Quiz', path: '/quiz.html', icon: 'fa fa-question-circle' },
-        { _id: '4', name: 'Leaderboard', path: '/leaderboard.html', icon: 'fa fa-trophy' }
-    ];
-}
-
-function saveData() {
-    try {
-        fs.writeFileSync(DB_FILE, JSON.stringify({ users, subjects, mcqs, navItems, messages, scores, settings }, null, 2));
-    } catch (e) {
-        console.error('❌ Error saving database:', e);
-    }
-}
+// Note: Database is now MongoDB (set up above)
+// Data is persisted in MongoDB, not in JSON file
 
 // General Authentication Middleware using JWT
-const auth = (req, res, next) => {
+const auth = async (req, res, next) => {
     const token = req.cookies.jwt;
     if (!token) {
         return res.status(401).json({ message: 'Unauthorized: Missing token.' });
     }
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        const user = users.find(u => u._id === decoded.userId);
+        
+        if (!isDbConnected) {
+            return res.status(503).json({ message: 'Database not connected' });
+        }
+        
+        const user = await User.findById(decoded.userId);
         if (!user) {
             return res.status(401).json({ message: 'Unauthorized: User not found.' });
         }
@@ -256,14 +339,19 @@ const auth = (req, res, next) => {
 };
 
 // Admin Authentication Middleware using JWT
-const adminAuth = (req, res, next) => {
+const adminAuth = async (req, res, next) => {
     const token = req.cookies.jwt;
     if (!token) {
         return res.status(401).json({ message: 'Unauthorized: Missing token.' });
     }
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        const user = users.find(u => u._id === decoded.userId);
+        
+        if (!isDbConnected) {
+            return res.status(503).json({ message: 'Database not connected' });
+        }
+        
+        const user = await User.findById(decoded.userId);
         if (!user || !user.isAdmin) {
             return res.status(403).json({ message: 'Forbidden: Admin access required.' });
         }
@@ -275,7 +363,7 @@ const adminAuth = (req, res, next) => {
 };
 
 // Route to get current user from token securely
-app.get('/api/users/me', auth, (req, res) => {
+app.get('/api/users/me', auth, async (req, res) => {
     res.json({
         userId: req.user._id,
         username: req.user.username,
@@ -305,62 +393,91 @@ app.get('/api/auth/check', auth, (req, res) => {
     });
 });
 
-// Basic API Routes (You will need to connect these to a real database later)
-app.get('/api/subjects', (req, res) => {
-    res.json(subjects);
-});
-
-app.post('/api/subjects', adminAuth, (req, res) => {
-    const newSubject = { _id: Date.now().toString(), ...req.body, topics: [] };
-    subjects.push(newSubject);
-    saveData();
-    res.json(newSubject);
-});
-
-app.put('/api/subjects/:id', adminAuth, (req, res) => {
-    const subject = subjects.find(s => s._id === req.params.id);
-    if (subject) {
-        subject.name = req.body.name || subject.name;
-        subject.description = req.body.description || subject.description;
-        saveData();
-        res.json(subject);
-    } else {
-        res.status(404).json({ message: 'Subject not found' });
+// Basic API Routes using MongoDB
+app.get('/api/subjects', async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        const subjects = await Subject.find();
+        res.json(subjects);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-app.delete('/api/subjects/:id', adminAuth, (req, res) => {
-    subjects = subjects.filter(s => s._id !== req.params.id);
-    saveData();
-    res.json({ message: 'Deleted' });
+app.post('/api/subjects', adminAuth, async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        const newSubject = await Subject.create({ ...req.body, topics: [] });
+        res.json(newSubject);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/subjects/:id', adminAuth, async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        const subject = await Subject.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!subject) return res.status(404).json({ message: 'Subject not found' });
+        res.json(subject);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/subjects/:id', adminAuth, async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        await Subject.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Topic Routes
-app.post('/api/subjects/:id/topics', adminAuth, (req, res) => {
-    const subject = subjects.find(s => s._id === req.params.id);
-    if (subject) {
-        const newTopic = { _id: Date.now().toString(), name: req.body.name };
-        subject.topics.push(newTopic);
-        saveData();
-        res.json(newTopic);
-    } else {
-        res.status(404).json({ message: 'Subject not found' });
+app.post('/api/subjects/:id/topics', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        const subject = await Subject.findById(req.params.id);
+        if (subject) {
+            subject.topics.push({ name: req.body.name });
+            await subject.save();
+            res.json(subject.topics[subject.topics.length - 1]);
+        } else {
+            res.status(404).json({ message: 'Subject not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-app.put('/api/subjects/:subjectId/topics/:topicId', adminAuth, (req, res) => {
-    const subject = subjects.find(s => s._id === req.params.subjectId);
-    if (subject) {
-        const topic = subject.topics.find(t => t._id === req.params.topicId);
-        if (topic) {
-            topic.name = req.body.name || topic.name;
-            saveData();
-            res.json(topic);
+app.put('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        const subject = await Subject.findById(req.params.subjectId);
+        if (subject) {
+            const topic = subject.topics.id(req.params.topicId);
+            if (topic) {
+                topic.name = req.body.name || topic.name;
+                await subject.save();
+                res.json(topic);
+            } else {
+                res.status(404).json({ message: 'Topic not found' });
+            }
         } else {
-            res.status(404).json({ message: 'Topic not found' });
+            res.status(404).json({ message: 'Subject not found' });
         }
-    } else {
-        res.status(404).json({ message: 'Subject not found' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -377,43 +494,84 @@ app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, (req, res) => 
 
 // MCQ Routes
 app.get('/api/mcqs/all', (req, res) => res.json(mcqs));
-app.get('/api/mcqs-category/all', (req, res) => res.json(mcqs)); // For stats
+app.get('/api/mcqs-category/all', async (req, res) => {
+    if (!isDbConnected) return res.json([]);
+    try {
+        const mcqs = await MCQ.find();
+        res.json(mcqs);
+    } catch (err) {
+        res.json([]);
+    }
+});
 
 // Filtered MCQs (Used by quiz.html)
-app.get('/api/mcqs', (req, res) => {
-    const { topic, category } = req.query;
-    console.log(`[API] Fetching MCQs for Topic: "${topic}", Category: "${category}"`);
-    let results = mcqs;
-    if (category) results = results.filter(m => m.category === category);
-    if (topic) results = results.filter(m => m.topic === topic);
-    console.log(`[API] Found ${results.length} questions.`);
-    res.json(results);
+app.get('/api/mcqs', async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        const { topic, category } = req.query;
+        console.log(`[API] Fetching MCQs for Topic: "${topic}", Category: "${category}"`);
+        let query = {};
+        if (category) query.category = category;
+        if (topic) query.topic = topic;
+        const results = await MCQ.find(query);
+        console.log(`[API] Found ${results.length} questions.`);
+        res.json(results);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.post('/api/mcqs', adminAuth, (req, res) => {
-    const newMcq = { _id: Date.now().toString(), ...req.body };
-    mcqs.push(newMcq);
-    saveData();
-    console.log(`[MCQ Added] Topic: ${newMcq.topic}, Question: ${newMcq.question}`);
-    res.json(newMcq);
+app.post('/api/mcqs', adminAuth, async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        const newMcq = await MCQ.create(req.body);
+        console.log(`[MCQ Added] Topic: ${newMcq.topic}, Question: ${newMcq.question}`);
+        res.json(newMcq);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.delete('/api/mcqs/:id', adminAuth, (req, res) => {
-    mcqs = mcqs.filter(m => m._id !== req.params.id);
-    saveData();
-    res.json({ message: 'Deleted' });
+app.delete('/api/mcqs/:id', adminAuth, async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        await MCQ.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Seed Data Route (For Admin Panel - REMOVED FOR SECURITY)
 // This endpoint has been removed. Use the admin panel to add data instead.
 
 // Contact/Message Routes
-app.get('/api/contact', adminAuth, (req, res) => res.json(messages.sort((a, b) => b.date - a.date)));
-app.post('/api/contact', (req, res) => {
-    const msg = { _id: Date.now().toString(), ...req.body, date: new Date(), read: false };
-    messages.push(msg);
-    saveData();
-    res.json({ message: 'Sent' });
+app.get('/api/contact', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.json([]);
+    try {
+        const messages = await Message.find().sort({ date: -1 });
+        res.json(messages);
+    } catch (err) {
+        res.json([]);
+    }
+});
+
+app.post('/api/contact', async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        await Message.create({ ...req.body, date: new Date(), read: false });
+        res.json({ message: 'Sent' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.put('/api/contact/:id/read', adminAuth, (req, res) => {
@@ -504,7 +662,7 @@ app.delete('/api/navitems/:id', adminAuth, (req, res) => {
 });
 
 // Scores Routes
-app.post('/api/scores', auth, (req, res) => {
+app.post('/api/scores', auth, async (req, res) => {
     const { topic, score, totalQuestions, percentage } = req.body;
     const userId = req.user._id;
 
@@ -512,48 +670,63 @@ app.post('/api/scores', auth, (req, res) => {
         return res.status(400).json({ message: 'Missing required score fields.' });
     }
 
-    const scoreData = { 
-        _id: Date.now().toString(), 
-        submittedAt: new Date().toISOString(),
-        userId,
-        username: req.user.username,
-        topic,
-        category: req.body.category,
-        score,
-        totalQuestions,
-        percentage,
-        answers: req.body.answers || []
-    };
-    scores.push(scoreData);
-    saveData();
-    console.log(`[SCORE] ${scoreData.username}: ${scoreData.score}/${scoreData.totalQuestions} (${scoreData.percentage}%) - ${scoreData.topic}`);
-    res.json(scoreData);
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+
+    try {
+        const scoreData = await Score.create({
+            userId,
+            username: req.user.username,
+            topic,
+            category: req.body.category,
+            score,
+            totalQuestions,
+            percentage,
+            answers: req.body.answers || []
+        });
+        console.log(`[SCORE] ${scoreData.username}: ${scoreData.score}/${scoreData.totalQuestions} (${scoreData.percentage}%) - ${scoreData.topic}`);
+        res.json(scoreData);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.get('/api/scores/user/:userId', (req, res) => {
-    const userScores = scores.filter(s => s.userId === req.params.userId);
-    // Sort by most recent
-    res.json(userScores.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)));
+app.get('/api/scores/user/:userId', async (req, res) => {
+    if (!isDbConnected) return res.json([]);
+    try {
+        const userScores = await Score.find({ userId: req.params.userId }).sort({ createdAt: -1 });
+        res.json(userScores);
+    } catch (err) {
+        res.json([]);
+    }
 });
 
-app.get('/api/leaderboard/:topic', (req, res) => {
-    const topicScores = scores
-        .filter(s => s.topic === req.params.topic)
-        .sort((a, b) => b.percentage - a.percentage)
-        .slice(0, 10)
-        .map(s => ({
+app.get('/api/leaderboard/:topic', async (req, res) => {
+    if (!isDbConnected) return res.json([]);
+    try {
+        const topicScores = await Score.find({ topic: req.params.topic })
+            .sort({ percentage: -1 })
+            .limit(10)
+            .select('username score totalQuestions percentage createdAt');
+        
+        const formattedScores = topicScores.map(s => ({
             _id: s._id,
             score: s.score,
             totalQuestions: s.totalQuestions,
             percentage: s.percentage,
             user: { username: s.username },
-            submittedAt: s.submittedAt
+            submittedAt: s.createdAt
         }));
-    res.json(topicScores);
+        
+        res.json(formattedScores);
+    } catch (err) {
+        res.json([]);
+    }
 });
 
 // Login Route
-app.post('/api/users/login', loginLimiter, (req, res) => {
+app.post('/api/users/login', loginLimiter, async (req, res) => {
     const { email, password } = req.body;
     
     // Input validation
@@ -565,16 +738,22 @@ app.post('/api/users/login', loginLimiter, (req, res) => {
         return res.status(400).json({ message: 'Invalid input: email or password too long.' });
     }
     
-    // Allow login with either email or username
-    const user = users.find(u => u.email === email || u.username === email);
-    
-    if (!user) {
-        return res.status(401).json({ message: 'Invalid credentials.' });
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
     }
     
-    // Compare password with hashed password
-    bcryptjs.compare(password, user.password, (err, isMatch) => {
-        if (err || !isMatch) {
+    try {
+        // Allow login with either email or username
+        const user = await User.findOne({ $or: [{ email }, { username: email }] });
+        
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid credentials.' });
+        }
+        
+        // Compare password with hashed password
+        const isMatch = await bcryptjs.compare(password, user.password);
+        
+        if (!isMatch) {
             return res.status(401).json({ message: 'Invalid credentials.' });
         }
         
@@ -585,9 +764,9 @@ app.post('/api/users/login', loginLimiter, (req, res) => {
         const isProduction = process.env.NODE_ENV === 'production';
         res.cookie('jwt', token, {
             httpOnly: true,
-            secure: isProduction, // Use HTTPS in production
+            secure: isProduction,
             sameSite: 'lax',
-            maxAge: 24 * 60 * 60 * 1000 // 1 day
+            maxAge: 24 * 60 * 60 * 1000
         });
         
         res.json({
@@ -596,11 +775,13 @@ app.post('/api/users/login', loginLimiter, (req, res) => {
             email: user.email,
             isAdmin: user.isAdmin
         });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Register Route
-app.post('/api/users/register', loginLimiter, (req, res) => {
+app.post('/api/users/register', loginLimiter, async (req, res) => {
     const { username, email, password } = req.body;
     
     // Input validation
@@ -624,66 +805,74 @@ app.post('/api/users/register', loginLimiter, (req, res) => {
         return res.status(400).json({ message: 'Password must be 8-128 characters.' });
     }
     
-    if (users.find(u => u.email === email)) {
-        return res.status(400).json({ message: 'Email already in use.' });
-    }
-
-    if (users.find(u => u.username === username)) {
-        return res.status(400).json({ message: 'Username already in use.' });
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
     }
     
-    // Hash password before storing
-    bcryptjs.hash(password, 10, (err, hashedPassword) => {
-        if (err) {
-            return res.status(500).json({ message: 'Error processing password.' });
+    try {
+        // Check if email or username already exists
+        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+        if (existingUser) {
+            if (existingUser.email === email) {
+                return res.status(400).json({ message: 'Email already in use.' });
+            }
+            return res.status(400).json({ message: 'Username already in use.' });
         }
         
-        const newUser = { 
-            _id: Date.now().toString(), 
+        // Hash password before storing
+        const hashedPassword = await bcryptjs.hash(password, 10);
+        
+        const newUser = await User.create({ 
             username, 
             email, 
             password: hashedPassword, 
-            isAdmin: false, 
-            createdAt: new Date() 
-        };
-        users.push(newUser);
-        saveData();
+            isAdmin: false 
+        });
+        
         res.status(201).json({ message: 'User registered successfully.' });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Get Users (for Admin Panel)
-app.get('/api/users', adminAuth, (req, res) => {
-    // Basic search and pagination for the mock
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const search = (req.query.search || '').toLowerCase();
-
-    let filteredUsers = users;
-    if (search) {
-        filteredUsers = users.filter(u => u.username.toLowerCase().includes(search) || u.email.toLowerCase().includes(search));
-    }
-
-    const totalPages = Math.ceil(filteredUsers.length / limit);
-    const paginatedUsers = filteredUsers.slice((page - 1) * limit, page * limit);
-
-    // Never expose password hashes
-    const safeUsers = paginatedUsers.map(({ password, resetToken, resetTokenExpiry, ...u }) => u);
-    res.json({ users: safeUsers, currentPage: page, totalPages: totalPages });
-});
-
-app.post('/api/users/promote', adminAuth, (req, res) => {
-    const user = users.find(u => u.email === req.body.email);
-    if (user) {
-        user.isAdmin = true;
-        saveData();
-        res.json({ message: 'User promoted' });
-    } else {
-        res.status(404).json({ message: 'User not found' });
+app.get('/api/users', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.json({ users: [], currentPage: 1, totalPages: 0 });
+    
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const search = req.query.search || '';
+        
+        let query = {};
+        if (search) {
+            query = { $or: [{ username: { $regex: search, $options: 'i' } }, { email: { $regex: search, $options: 'i' } }] };
+        }
+        
+        const totalUsers = await User.countDocuments(query);
+        const users = await User.find(query).skip((page - 1) * limit).limit(limit).select('-password');
+        
+        res.json({ users, currentPage: page, totalPages: Math.ceil(totalUsers / limit) });
+    } catch (err) {
+        res.json({ users: [], currentPage: 1, totalPages: 0 });
     }
 });
 
-app.post('/api/users/change-password', adminAuth, (req, res) => {
+app.post('/api/users/promote', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        const user = await User.findOneAndUpdate({ email: req.body.email }, { isAdmin: true }, { new: true });
+        if (user) {
+            res.json({ message: 'User promoted' });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/users/change-password', adminAuth, async (req, res) => {
     const { userId, newPassword } = req.body;
     
     if (!userId || !newPassword) {
