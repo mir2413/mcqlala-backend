@@ -1015,17 +1015,25 @@ let emailServiceReady = false;
 
 try {
     const nodemailer = require('nodemailer');
-    transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER || 'your-email@gmail.com',
-            pass: process.env.EMAIL_PASS || 'your-app-password'
-        }
-    });
-    emailServiceReady = true;
+    
+    const emailUser = process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASS;
+    
+    if (emailUser && emailPass && emailUser !== 'your-email@gmail.com' && emailPass !== 'your-app-password') {
+        transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: emailUser,
+                pass: emailPass
+            }
+        });
+        emailServiceReady = true;
+        console.log('✅ Email service configured:', emailUser);
+    } else {
+        console.warn('⚠️ EMAIL_USER or EMAIL_PASS not set in environment variables');
+    }
 } catch (error) {
-    console.warn('⚠️ Nodemailer not found or configured. Password reset will log to console only.');
-    console.warn('👉 Run: npm install nodemailer');
+    console.warn('⚠️ Email service error:', error.message);
 }
 
 app.post('/api/users/forgot-password', async (req, res) => {
