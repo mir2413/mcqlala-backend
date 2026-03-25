@@ -13,7 +13,11 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-for-mcqlala';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    console.error('❌ ERROR: JWT_SECRET environment variable is not set.');
+    console.error('👉 Please set a strong random JWT_SECRET in your Render environment variables.');
+}
 
 // MongoDB Setup
 let mongoose;
@@ -371,7 +375,7 @@ app.get('/api/users/me', auth, async (req, res) => {
 app.post('/api/users/logout', (req, res) => {
     res.clearCookie('jwt', {
         httpOnly: true,
-        secure: false,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax'
     });
     res.json({ message: 'Logged out successfully' });
@@ -489,14 +493,16 @@ app.put('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, res) 
     }
 });
 
-app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, (req, res) => {
-    const subject = subjects.find(s => s._id === req.params.subjectId);
-    if (subject) {
-        subject.topics = subject.topics.filter(t => t._id !== req.params.topicId);
-        saveData();
+app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        const subject = await Subject.findById(req.params.subjectId);
+        if (!subject) return res.status(404).json({ message: 'Subject not found' });
+        subject.topics = subject.topics.filter(t => t._id.toString() !== req.params.topicId);
+        await subject.save();
         res.json({ message: 'Topic deleted' });
-    } else {
-        res.status(404).json({ message: 'Subject not found' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -950,7 +956,8 @@ app.get('/api/users', adminAuth, async (req, res) => {
         
         let query = {};
         if (search) {
-            query = { $or: [{ username: { $regex: search, $options: 'i' } }, { email: { $regex: search, $options: 'i' } }] };
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            query = { $or: [{ username: { $regex: escapedSearch, $options: 'i' } }, { email: { $regex: escapedSearch, $options: 'i' } }] };
         }
         
         const totalUsers = await User.countDocuments(query);
@@ -976,25 +983,10 @@ app.post('/api/users/promote', adminAuth, async (req, res) => {
     }
 });
 
-// Admin promotion endpoint (temporary - remove after use)
-app.post('/api/admin/promote', async (req, res) => {
-    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
-    try {
-        const { email } = req.body;
-        if (!email) return res.status(400).json({ message: 'Email required' });
-        
-        const user = await User.findOneAndUpdate({ email }, { isAdmin: true }, { new: true });
-        if (user) {
-            res.json({ message: 'User promoted to admin!', user: { email: user.email, isAdmin: user.isAdmin } });
-        } else {
-            res.status(404).json({ message: 'User not found' });
-        }
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+// Admin promotion removed for security - use CLI or env vars to bootstrap admin
 
 app.post('/api/users/change-password', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
     const { userId, newPassword } = req.body;
     
     if (!userId || !newPassword) {
@@ -1005,19 +997,16 @@ app.post('/api/users/change-password', adminAuth, async (req, res) => {
         return res.status(400).json({ message: 'Password must be at least 8 characters.' });
     }
     
-    const user = users.find(u => u._id === userId);
-    if (!user) {
-        return res.status(404).json({ message: 'User not found.' });
-    }
-    
-    bcryptjs.hash(newPassword, 10, (err, hashedPassword) => {
-        if (err) {
-            return res.status(500).json({ message: 'Error processing password.' });
+    try {
+        const hashedPassword = await bcryptjs.hash(newPassword, 10);
+        const user = await User.findByIdAndUpdate(userId, { password: hashedPassword });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
         }
-        user.password = hashedPassword;
-        saveData();
         res.json({ message: 'Password updated successfully.' });
-    });
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating password.' });
+    }
 });
 
 // Forgot Password Routes - with REAL EMAIL
@@ -1039,88 +1028,93 @@ try {
     console.warn('👉 Run: npm install nodemailer');
 }
 
-app.post('/api/users/forgot-password', (req, res) => {
+app.post('/api/users/forgot-password', async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
     const { email } = req.body;
     
     if (!email || !email.includes('@')) {
         return res.status(400).json({ message: 'Valid email required' });
     }
     
-    const user = users.find(u => u.email === email);
-    if (!user) {
-        // Don't reveal if email exists (security)
-        return res.json({ message: 'If email exists, reset link sent (check spam folder)' });
-    }
-    
-    // Generate secure token (48 chars)
-    const token = require('crypto').randomBytes(24).toString('hex');
-    const expiry = Date.now() + 60 * 60 * 1000; // 1 hour
-    
-    user.resetToken = token;
-    user.resetTokenExpiry = expiry;
-    saveData();
-    
-    // Send real email
-    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password.html?token=${token}`;
-    
-    if (emailServiceReady && transporter) {
-        const mailOptions = {
-            from: process.env.EMAIL_USER || 'noreply@mcqlala.com',
-            to: email,
-            subject: 'mcqlala Password Reset',
-            html: `
-                <h2>Reset Your mcqlala Password</h2>
-                <p>Click the link below to reset your password (expires in 1 hour):</p>
-                <a href="${resetUrl}" style="background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password</a>
-                <p>Or copy this link: <code>${resetUrl}</code></p>
-                <p>If you didn't request this, ignore this email.</p>
-                <p>Best,<br>mcqlala Team</p>
-            `
-        };
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            // Don't reveal if email exists (security)
+            return res.json({ message: 'If email exists, reset link sent (check spam folder)' });
+        }
         
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error('[EMAIL ERROR]', error);
-                return res.json({ message: 'Reset link generated! Token in console (email failed - check .env)' });
-            }
-            console.log(`[RESET EMAIL SENT] ${email}: ${token}`);
-            res.json({ message: 'Reset link sent to your email! Check inbox/spam.' });
-        });
-    } else {
-        console.log(`\n[DEV MODE] Password Reset Token for ${email}: ${token}\n`);
-        res.json({ message: 'Email service unavailable. Reset token logged to server console.' });
+        // Generate secure token (48 chars)
+        const token = require('crypto').randomBytes(24).toString('hex');
+        const expiry = Date.now() + 60 * 60 * 1000; // 1 hour
+        
+        user.resetToken = token;
+        user.resetTokenExpiry = expiry;
+        await user.save();
+        
+        // Send real email
+        const resetUrl = `${req.protocol}://${req.get('host')}/reset-password.html?token=${token}`;
+        
+        if (emailServiceReady && transporter) {
+            const mailOptions = {
+                from: process.env.EMAIL_USER || 'noreply@mcqlala.com',
+                to: email,
+                subject: 'mcqlala Password Reset',
+                html: `
+                    <h2>Reset Your mcqlala Password</h2>
+                    <p>Click the link below to reset your password (expires in 1 hour):</p>
+                    <a href="${resetUrl}" style="background: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password</a>
+                    <p>Or copy this link: <code>${resetUrl}</code></p>
+                    <p>If you didn't request this, ignore this email.</p>
+                    <p>Best,<br>mcqlala Team</p>
+                `
+            };
+            
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    console.error('[EMAIL ERROR]', error);
+                    return res.json({ message: 'Reset link generated! Token in console (email failed)' });
+                }
+                console.log(`[RESET EMAIL SENT] ${email}: ${token}`);
+                res.json({ message: 'Reset link sent to your email! Check inbox/spam.' });
+            });
+        } else {
+            console.log(`\n[DEV MODE] Password Reset Token for ${email}: ${token}\n`);
+            res.json({ message: 'Email service unavailable. Reset token logged to server console.' });
+        }
+    } catch (err) {
+        res.status(500).json({ message: 'Error processing request' });
     }
 });
 
-app.post('/api/users/reset-password', (req, res) => {
+app.post('/api/users/reset-password', async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
     const { token, password } = req.body;
     
     if (!token || !password || password.length < 8) {
         return res.status(400).json({ message: 'Invalid token or password' });
     }
     
-    const user = users.find(u => 
-        u.resetToken === token && 
-        u.resetTokenExpiry > Date.now()
-    );
-    
-    if (!user) {
-        return res.status(400).json({ message: 'Invalid or expired token' });
-    }
-    
-    bcryptjs.hash(password, 10, (err, hashedPassword) => {
-        if (err) {
-            return res.status(500).json({ message: 'Error resetting password' });
+    try {
+        const user = await User.findOne({ 
+            resetToken: token, 
+            resetTokenExpiry: { $gt: Date.now() }
+        });
+        
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired token' });
         }
         
+        const hashedPassword = await bcryptjs.hash(password, 10);
         user.password = hashedPassword;
-        delete user.resetToken;
-        delete user.resetTokenExpiry;
-        saveData();
+        user.resetToken = undefined;
+        user.resetTokenExpiry = undefined;
+        await user.save();
         
         console.log(`[RESET COMPLETE] Password reset for ${user.email}`);
         res.json({ message: 'Password reset successful! You can now login.' });
-    });
+    } catch (err) {
+        res.status(500).json({ message: 'Error resetting password' });
+    }
 });
 
 // Fallback to index.html for any other requests (useful for SPA, though this is a multi-page site)
