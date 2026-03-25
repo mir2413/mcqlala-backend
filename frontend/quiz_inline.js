@@ -156,14 +156,10 @@
             document.getElementById('prevBtn').disabled = currentPage === 1;
             
             const nextBtn = document.getElementById('nextBtn');
-            
-            if (currentPage === totalPages) {
-                nextBtn.innerText = 'Finish Quiz';
-                nextBtn.classList.add('submit-btn');
-            } else {
-                nextBtn.innerText = 'Next →';
-                nextBtn.classList.remove('submit-btn');
-            }
+            nextBtn.innerText = 'Next →';
+            nextBtn.classList.remove('submit-btn');
+            nextBtn.style.display = currentPage === totalPages ? 'none' : 'inline-block';
+            document.getElementById('prevBtn').style.display = currentPage === 1 ? 'none' : 'inline-block';
             
 
             // Update answered count
