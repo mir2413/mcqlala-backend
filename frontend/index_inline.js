@@ -4,20 +4,29 @@
             checkAuth();
             loadNavLinks();
             const user = getCurrentUser();
-            if (user.username) {
+            const isLoggedIn = user.username && user.userId;
+            const userProfile = document.getElementById('userProfile');
+            const loginBtn = document.getElementById('loginBtn');
+
+            if (isLoggedIn) {
+                if (userProfile) userProfile.style.display = 'flex';
+                if (loginBtn) loginBtn.style.display = 'none';
                 document.getElementById('username').textContent = user.username;
                 const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
                 // Show Admin Button ONLY for admin users
                 if (isAdmin) {
                     const adminBtn = document.createElement('button');
-                    adminBtn.className = 'btn-secondary admin-btn'; // Use a different class
+                    adminBtn.className = 'btn-secondary admin-btn';
                     adminBtn.style.backgroundColor = '#4ecdc4';
                     adminBtn.style.marginRight = '10px';
                     adminBtn.textContent = 'Admin Panel';
                     adminBtn.onclick = () => window.location.href = 'admin.html';
                     document.getElementById('userProfile').insertBefore(adminBtn, document.querySelector('#userProfile .logout-btn'));
                 }
+            } else {
+                if (userProfile) userProfile.style.display = 'none';
+                if (loginBtn) loginBtn.style.display = 'flex';
             }
             
             // Load subjects for all users (logged in or not)
