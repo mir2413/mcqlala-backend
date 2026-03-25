@@ -96,15 +96,55 @@ async function loadNavLinks() {
         return;
     }
 
+    navLinksContainer.innerHTML = '';
+
+    // Always add Home and Study Materials first
+    const defaultLinks = [
+        { text: 'Home', icon: 'fa-solid fa-house', link: 'index.html' },
+        { text: 'Study Materials', icon: 'fa-solid fa-book', link: 'pdfs.html' }
+    ];
+
+    defaultLinks.forEach(item => {
+        const li = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = item.link;
+        link.style.textDecoration = 'none';
+        link.style.color = 'inherit';
+        link.style.display = 'flex';
+        link.style.alignItems = 'center';
+        
+        const icon = document.createElement('i');
+        icon.className = item.icon;
+        icon.style.marginRight = '8px';
+        icon.style.fontSize = '16px';
+        icon.style.color = '#667eea';
+        
+        const text = document.createElement('span');
+        text.textContent = item.text;
+        
+        link.appendChild(icon);
+        link.appendChild(text);
+        li.appendChild(link);
+        navLinksContainer.appendChild(li);
+    });
+
+    // Track added links to avoid duplicates
+    const addedLinks = ['index.html', 'pdfs.html'];
+
     try {
         const response = await fetch(`${API_BASE_URL}/navitems`);
         if (!response.ok) throw new Error('Failed to fetch nav items');
         const items = await response.json();
         
         items.forEach(item => {
+            const itemLink = String(item.link || item.path || item.url || '#').substring(0, 2048);
+            // Skip if already added
+            if (addedLinks.includes(itemLink)) return;
+            addedLinks.push(itemLink);
+
             const li = document.createElement('li');
             const link = document.createElement('a');
-            link.href = String(item.link || item.path || item.url || '#').substring(0, 2048);
+            link.href = itemLink;
             link.style.textDecoration = 'none';
             link.style.color = 'inherit';
             link.style.display = 'flex';
