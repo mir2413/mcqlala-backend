@@ -671,8 +671,10 @@
                 document.getElementById('newSubjectDesc').value = subject.description || '';
                 editingSubjectId = id;
 
-                const addButton = document.querySelector('#manage-subjects .btn-primary');
-                addButton.innerHTML = '<i class="fa-solid fa-save"></i> Update Subject';
+                const addButton = document.querySelector('#manage-subjects button[data-onclick="addSubject"]');
+                if (addButton) {
+                    addButton.innerHTML = '<i class="fa-solid fa-save"></i> Update Subject';
+                }
 
                 if (!document.getElementById('cancelSubjectEditBtn')) {
                     const cancelBtn = document.createElement('button');
@@ -681,7 +683,9 @@
                     cancelBtn.className = 'btn-secondary';
                     cancelBtn.style.marginLeft = '10px';
                     cancelBtn.onclick = resetSubjectForm;
-                    addButton.parentNode.appendChild(cancelBtn);
+                    if (addButton && addButton.parentNode) {
+                        addButton.parentNode.appendChild(cancelBtn);
+                    }
                 }
 
                 document.getElementById('newSubjectName').focus();
