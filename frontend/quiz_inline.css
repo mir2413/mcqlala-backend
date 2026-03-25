@@ -5,22 +5,22 @@
         }
 
         .quiz-question {
-            background: #f9f9f9;
+            background: #0F172A;
             padding: 20px;
             border-radius: 8px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #3B82F6;
             page-break-inside: avoid;
         }
 
         .quiz-question h4 {
-            color: #333;
+            color: #E5E7EB;
             font-size: 16px;
             margin-bottom: 15px;
             font-weight: 600;
         }
 
         .quiz-question-number {
-            color: #667eea;
+            color: #3B82F6;
             font-weight: bold;
             margin-bottom: 8px;
         }
@@ -35,16 +35,16 @@
             display: flex;
             align-items: center;
             padding: 12px;
-            background: white;
-            border: 2px solid #ddd;
+            background: #1E293B;
+            border: 2px solid #334155;
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.3s;
         }
 
         .quiz-option:hover {
-            border-color: #667eea;
-            background: #f0f0f0;
+            border-color: #3B82F6;
+            background: rgba(59, 130, 246, 0.1);
         }
 
         .quiz-option input[type="radio"] {
@@ -56,7 +56,7 @@
 
         .quiz-option span {
             flex: 1;
-            color: #333;
+            color: #E5E7EB;
         }
 
         .pagination {
@@ -69,7 +69,7 @@
 
         .pagination button {
             padding: 10px 15px;
-            background: #667eea;
+            background: #3B82F6;
             color: white;
             border: none;
             border-radius: 4px;
@@ -79,29 +79,30 @@
         }
 
         .pagination button:hover:not(:disabled) {
-            background: #5568d3;
+            background: #2563EB;
             transform: translateY(-2px);
         }
 
         .pagination button:disabled {
-            background: #ccc;
+            background: #334155;
             cursor: not-allowed;
             opacity: 0.5;
         }
 
         .pagination span {
-            color: #666;
+            color: #94A3B8;
             font-weight: 600;
         }
 
         .page-info {
             text-align: center;
             padding: 15px;
-            background: #f0f0f0;
+            background: #1E293B;
             border-radius: 6px;
             margin-bottom: 20px;
             font-weight: 600;
-            color: #667eea;
+            color: #3B82F6;
+            border: 1px solid #334155;
         }
 
         .quiz-actions {
@@ -123,37 +124,38 @@
         }
 
         .submit-btn {
-            background: linear-gradient(135deg, #21cc12, #0aab0a);
+            background: #22C55E;
             color: white;
         }
 
         .submit-btn:hover {
+            background: #16a34a;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(10, 171, 10, 0.4);
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
         }
 
         .save-progress {
             padding: 15px;
-            background: #e3f2fd;
-            border-left: 4px solid #667eea;
+            background: rgba(59, 130, 246, 0.15);
+            border-left: 4px solid #3B82F6;
             border-radius: 4px;
             text-align: center;
-            color: #667eea;
+            color: #3B82F6;
             font-weight: 600;
             margin-bottom: 20px;
         }
 
         .progress-summary {
             padding: 15px;
-            background: #fff3e0;
-            border-left: 4px solid #ff9800;
+            background: rgba(239, 68, 68, 0.15);
+            border-left: 4px solid #EF4444;
             border-radius: 4px;
             margin-bottom: 20px;
             font-weight: 600;
         }
 
         .progress-summary span {
-            color: #ff6f00;
+            color: #EF4444;
         }
 
         .spinner-container {
@@ -164,8 +166,8 @@
         }
 
         .spinner {
-            border: 6px solid #f3f3f3; /* Light grey */
-            border-top: 6px solid #667eea; /* Purple */
+            border: 6px solid #1E293B;
+            border-top: 6px solid #3B82F6;
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -173,15 +175,15 @@
         }
 
         .quiz-option.correct {
-            background-color: #d4edda !important;
-            border-color: #28a745 !important;
-            color: #155724;
+            background-color: rgba(34, 197, 94, 0.2) !important;
+            border-color: #22C55E !important;
+            color: #E5E7EB;
         }
 
         .quiz-option.wrong {
-            background-color: #f8d7da !important;
-            border-color: #dc3545 !important;
-            color: #721c24;
+            background-color: rgba(239, 68, 68, 0.2) !important;
+            border-color: #EF4444 !important;
+            color: #E5E7EB;
         }
 
         @keyframes spin {

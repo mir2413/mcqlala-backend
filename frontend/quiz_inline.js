@@ -126,21 +126,21 @@
                                            ${isAnswered ? 'disabled' : ''}
                                            data-onchange="saveAnswer" data-args="[${questionId}, ${optIndex}]">
                                     <span>${escapeHtml(option)}</span>
-                                    ${isAnswered && optIndex === correctAns ? '<i class="fa-solid fa-check" style="color: green; margin-left: 10px;"></i>' : ''}
-                                    ${isAnswered && optIndex === userAnswer && optIndex !== correctAns ? '<i class="fa-solid fa-times" style="color: red; margin-left: 10px;"></i>' : ''}
+                                    ${isAnswered && optIndex === correctAns ? '<i class="fa-solid fa-check" style="color: #22C55E; margin-left: 10px;"></i>' : ''}
+                                    ${isAnswered && optIndex === userAnswer && optIndex !== correctAns ? '<i class="fa-solid fa-times" style="color: #EF4444; margin-left: 10px;"></i>' : ''}
                                 </label>
                             `}).join('')}
                         </div>
                         ${isAnswered ? `
-                            <div style="margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                                <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 10px; color: ${userAnswer === correctAns ? '#28a745' : '#dc3545'};">
+                            <div style="margin-top: 20px; padding: 15px; background: #1E293B; border: 1px solid #334155; border-radius: 8px;">
+                                <div style="font-weight: bold; font-size: 1.1em; margin-bottom: 10px; color: ${userAnswer === correctAns ? '#22C55E' : '#EF4444'};">
                                     ${userAnswer === correctAns ? '<i class="fa-solid fa-circle-check"></i> Correct!' : '<i class="fa-solid fa-circle-xmark"></i> Incorrect'}
                                 </div>
                                 
-                                ${userAnswer !== correctAns ? `<div style="margin-bottom: 12px; font-size: 0.95em; color: #555; background: #fff5f5; padding: 8px 12px; border-radius: 4px; border-left: 3px solid #dc3545;"><strong>Correct Answer:</strong> ${escapeHtml(question.options[correctAns])}</div>` : ''}
+                                ${userAnswer !== correctAns ? `<div style="margin-bottom: 12px; font-size: 0.95em; color: #E5E7EB; background: rgba(239, 68, 68, 0.1); padding: 8px 12px; border-radius: 4px; border-left: 3px solid #EF4444;"><strong>Correct Answer:</strong> ${escapeHtml(question.options[correctAns])}</div>` : ''}
 
-                                ${question.explanation ? `<div style="background: #f0f7ff; border-left: 4px solid #667eea; padding: 12px; border-radius: 4px; font-size: 0.95em; color: #444;">
-                                    <div style="font-weight: bold; color: #667eea; margin-bottom: 5px;"><i class="fa-solid fa-circle-info"></i> Explanation:</div>${escapeHtml(question.explanation)}</div>` : ''}
+                                ${question.explanation ? `<div style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3B82F6; padding: 12px; border-radius: 4px; font-size: 0.95em; color: #E5E7EB;">
+                                    <div style="font-weight: bold; color: #3B82F6; margin-bottom: 5px;"><i class="fa-solid fa-circle-info"></i> Explanation:</div>${escapeHtml(question.explanation)}</div>` : ''}
                             </div>
                         ` : ''}
                     </div>
