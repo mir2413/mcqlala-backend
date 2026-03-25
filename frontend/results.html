@@ -16,8 +16,8 @@
                 <p>For all exams (UPSC, PSC, JKSSB, SSC)</p>
             </div>
         </div>
-        <ul class="nav-links">
-            <!-- Items will be loaded dynamically -->
+        <ul class="nav-links" id="navLinks">
+            <li id="studyMaterialsLi"><a href="pdfs.html" style="display:flex;align-items:center;text-decoration:none;color:inherit;"><i class="fa-solid fa-book" style="margin-right:8px;font-size:16px;color:#667eea;"></i><span>Study Materials</span></a></li>
         </ul>
         <div class="user-profile">
             <i class="fa-solid fa-user"></i>
@@ -112,14 +112,14 @@
     <div id="contactPopup" class="contact-popup">
         <h3 style="margin-bottom: 15px; color: #333;">Contact Us</h3>
         <form class="footer-form" data-onsubmit="submitContactForm">
-            <input type="text" placeholder="Your Name" required>
-            <input type="email" placeholder="Your Email" required>
-            <textarea placeholder="Your Message" required rows="3"></textarea>
+            <input type="text" id="contactName" name="name" autocomplete="name" placeholder="Your Name" required>
+            <input type="email" id="contactEmail" name="email" autocomplete="email" placeholder="Your Email" required>
+            <textarea id="contactMessage" name="message" placeholder="Your Message" required rows="3"></textarea>
             <button type="submit">Send Message</button>
         </form>
     </div>
 
-    <script src="app.js?v=1774346226095"></script>
+    <script src="app.js?v=1774349000000"></script>
     
     <script src="results_inline.js?v=1774346226095"></script>
 </body>

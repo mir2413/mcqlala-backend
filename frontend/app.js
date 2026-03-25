@@ -91,14 +91,16 @@ function toggleChildButtons(element) {
 
 async function loadNavLinks() {
     const navLinksContainer = document.querySelector('.nav-links');
-    if (!navLinksContainer) return;
+    if (!navLinksContainer) {
+        console.log('Nav container not found');
+        return;
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}/navitems`);
         if (!response.ok) throw new Error('Failed to fetch nav items');
         const items = await response.json();
-
-        navLinksContainer.textContent = '';
+        
         items.forEach(item => {
             const li = document.createElement('li');
             const link = document.createElement('a');
@@ -157,7 +159,6 @@ async function loadNavLinks() {
 
     } catch (error) {
         console.error('Error loading navigation links:', error);
-        if (navLinksContainer) navLinksContainer.innerHTML = '';
     }
 }
 
@@ -337,12 +338,12 @@ function renderSettingsUI() {
                 <h3><i class="fa fa-cogs"></i> Website Settings</h3>
                 <form id="settingsForm" onsubmit="window.saveSiteSettings(event)">
                     <div class="form-group">
-                        <label>Website Title</label>
-                        <input type="text" id="siteTitle" class="form-control" placeholder="e.g. MCQLala" style="width: 100%; padding: 10px; margin-bottom: 15px;" required>
+                        <label for="siteTitle">Website Title</label>
+                        <input type="text" id="siteTitle" name="siteTitle" class="form-control" placeholder="e.g. MCQLala" style="width: 100%; padding: 10px; margin-bottom: 15px;" required>
                     </div>
                     <div class="form-group">
-                        <label>Footer Text</label>
-                        <input type="text" id="siteFooter" class="form-control" placeholder="e.g. © 2026 Company Name" style="width: 100%; padding: 10px; margin-bottom: 15px;">
+                        <label for="siteFooter">Footer Text</label>
+                        <input type="text" id="siteFooter" name="siteFooter" class="form-control" placeholder="e.g. © 2026 Company Name" style="width: 100%; padding: 10px; margin-bottom: 15px;">
                     </div>
                     <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
                 </form>
