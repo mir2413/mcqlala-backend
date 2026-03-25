@@ -28,12 +28,7 @@
             const userId = localStorage.getItem('userId');
             const username = localStorage.getItem('username');
 
-            if (!userId) {
-                window.location.href = 'login.html';
-                return;
-            }
-
-            document.getElementById('username').textContent = username;
+            document.getElementById('username').textContent = username || 'Guest';
             document.getElementById('topicTitle').textContent = `${category} - ${topic}`;
 
             await loadQuestions();
