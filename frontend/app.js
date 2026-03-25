@@ -1207,10 +1207,16 @@ window.toggleChildButtonsWrapper = function(e) {
             
             if (target.hasAttribute('data-args')) {
                 try {
-                    let argsStr = target.getAttribute('data-args').replace(/'/g, '"');
-                    if (argsStr === '[this]') {
+                    let argsStr = target.getAttribute('data-args');
+                    // Handle [this] special case
+                    if (argsStr.trim() === '[this]') {
                         args = [target];
                     } else {
+                        // Replace single quotes and unquoted keywords
+                        argsStr = argsStr
+                            .replace(/'/g, '"')
+                            .replace(/\bevent\b/g, '"event"')
+                            .replace(/\bthis\b/g, '"this"');
                         args = JSON.parse(argsStr);
                         args = args.map(arg => arg === 'event' ? e : (arg === 'this' ? target : arg));
                     }
