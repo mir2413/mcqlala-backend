@@ -125,38 +125,6 @@ async function loadNavLinks() {
             navLinksContainer.appendChild(li);
         });
 
-        // Add "Profile" link if logged in
-        if (isLoggedIn()) {
-            const li = document.createElement('li');
-            const link = document.createElement('a');
-            link.href = 'profile.html';
-            link.style.textDecoration = 'none';
-            link.style.color = 'inherit';
-            link.style.display = 'flex';
-            link.style.alignItems = 'center';
-            
-            link.innerHTML = `
-                <i class="fa fa-user-circle" style="margin-right: 8px; font-size: 16px; color: #667eea;"></i>
-                <span>My Profile</span>
-            `;
-            
-            li.appendChild(link);
-            navLinksContainer.appendChild(li);
-        }
-        
-        // Add "Admin Panel" link if admin
-        const user = getCurrentUser();
-        if (isLoggedIn() && user.isAdmin) {
-            const li = document.createElement('li');
-            const link = document.createElement('a');
-            link.href = 'admin.html';
-            link.style.textDecoration = 'none';
-            link.style.color = 'inherit';
-            link.innerHTML = `<i class="fa fa-cogs" style="margin-right: 8px;"></i> Admin Panel`;
-            li.appendChild(link);
-            navLinksContainer.appendChild(li);
-        }
-
     } catch (error) {
         console.error('Error loading navigation links:', error);
     }
