@@ -1033,14 +1033,15 @@ body {
         width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
     }
     
     .filters select,
     .filters button {
         width: 100%;
-        padding: 14px;
-        font-size: 16px;
+        padding: 10px 12px;
+        font-size: 14px;
+        min-height: 40px;
     }
     
     /* Cards */
