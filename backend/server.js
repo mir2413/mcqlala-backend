@@ -643,6 +643,9 @@ app.post('/api/settings', adminAuth, async (req, res) => {
 
 // PDF Routes
 app.get('/api/pdfs', (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     const pdfDir = path.join(__dirname, '..', 'frontend', 'pdfs');
     if (!fs.existsSync(pdfDir)) return res.json([]);
     const files = fs.readdirSync(pdfDir).filter(f => f.endsWith('.pdf')).map(f => ({

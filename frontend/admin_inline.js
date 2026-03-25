@@ -1036,7 +1036,7 @@
 
         async function loadPdfs() {
             try {
-                const response = await fetch(`${API_BASE_URL}/pdfs`);
+                const response = await fetch(`${API_BASE_URL}/pdfs?t=${Date.now()}`);
                 const pdfs = await response.json();
                 const container = document.getElementById('pdfsList');
                 if (pdfs.length === 0) {
