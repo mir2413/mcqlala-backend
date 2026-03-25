@@ -158,17 +158,6 @@ async function connectDB() {
         console.log('✅ MongoDB connected successfully!');
         isDbConnected = true;
         
-        // Create default nav items if none exist
-        const navCount = await NavItem.countDocuments();
-        if (navCount === 0) {
-            await NavItem.create([
-                { name: 'Home', path: '/', icon: 'fa fa-home' },
-                { name: 'Admin Panel', path: '/admin.html', icon: 'fa fa-cogs' },
-                { name: 'Quiz', path: '/quiz.html', icon: 'fa fa-question-circle' },
-                { name: 'Leaderboard', path: '/leaderboard.html', icon: 'fa fa-trophy' }
-            ]);
-        }
-        
         // Create default subjects if none exist
         const subjectCount = await Subject.countDocuments();
         if (subjectCount === 0) {
@@ -682,26 +671,10 @@ app.delete('/api/pdfs/:filename', adminAuth, (req, res) => {
 // Nav Items Routes
 app.get('/api/navitems', async (req, res) => {
     if (!isDbConnected) {
-        // Return default nav items if database not connected
-        return res.json([
-            { name: 'Home', path: '/', icon: 'fa fa-home' },
-            { name: 'Admin Panel', path: '/admin.html', icon: 'fa fa-cogs' },
-            { name: 'Quiz', path: '/quiz.html', icon: 'fa fa-question-circle' },
-            { name: 'Leaderboard', path: '/leaderboard.html', icon: 'fa fa-trophy' }
-        ]);
+        return res.json([]);
     }
     try {
         const items = await NavItem.find();
-        if (items.length === 0) {
-            // Create default items
-            const defaults = await NavItem.create([
-                { name: 'Home', path: '/', icon: 'fa fa-home' },
-                { name: 'Admin Panel', path: '/admin.html', icon: 'fa fa-cogs' },
-                { name: 'Quiz', path: '/quiz.html', icon: 'fa fa-question-circle' },
-                { name: 'Leaderboard', path: '/leaderboard.html', icon: 'fa fa-trophy' }
-            ]);
-            return res.json(defaults);
-        }
         res.json(items);
     } catch (err) {
         res.json([]);
