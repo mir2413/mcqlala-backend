@@ -1052,7 +1052,7 @@
                                 <p style="color: #666; font-size: 12px; margin: 0;">${new Date(pdf.uploadedAt).toLocaleString()}</p>
                             </div>
                         </div>
-                        <button data-onclick="deletePdf" data-args="['${pdf.name}']" class="delete-btn" style="padding: 6px 12px;"><i class="fa-solid fa-trash"></i></button>
+                        <button data-onclick="deletePdf" data-args="['${pdf._id}']" class="delete-btn" style="padding: 6px 12px;"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 `).join('');
             } catch (e) {
@@ -1060,10 +1060,10 @@
             }
         }
 
-        async function deletePdf(filename) {
+        async function deletePdf(id) {
             if (!confirm('Delete this PDF?')) return;
             try {
-                const response = await fetch(`${API_BASE_URL}/pdfs/${filename}`, { method: 'DELETE' });
+                const response = await fetch(`${API_BASE_URL}/pdfs/${id}`, { method: 'DELETE' });
                 if (response.ok) {
                     showSuccess('PDF deleted');
                     loadPdfs();

@@ -137,6 +137,14 @@ const settingSchema = new mongoose.Schema({
     footer: String
 });
 
+const pdfSchema = new mongoose.Schema({
+    name: String,
+    data: Buffer,
+    contentType: String,
+    size: Number,
+    uploadedAt: { type: Date, default: Date.now }
+});
+
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 const Subject = mongoose.models.Subject || mongoose.model('Subject', subjectSchema);
 const MCQ = mongoose.models.MCQ || mongoose.model('MCQ', mcqSchema);
@@ -144,6 +152,7 @@ const Score = mongoose.models.Score || mongoose.model('Score', scoreSchema);
 const NavItem = mongoose.models.NavItem || mongoose.model('NavItem', navItemSchema);
 const Message = mongoose.models.Message || mongoose.model('Message', messageSchema);
 const Setting = mongoose.models.Setting || mongoose.model('Setting', settingSchema);
+const PDF = mongoose.models.PDF || mongoose.model('PDF', pdfSchema);
 
 let isDbConnected = false;
 
@@ -261,16 +270,13 @@ app.use(express.static(frontendPath, {
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Multer for file uploads
+// Multer for file uploads (memory storage for MongoDB)
 const multer = require('multer');
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, '..', 'frontend', 'pdfs')),
-    filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
-});
+const storage = multer.memoryStorage();
 const upload = multer({ storage, fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/pdf') cb(null, true);
     else cb(new Error('Only PDFs allowed'), false);
-}});
+}, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB limit
 
 // Ensure pdfs directory exists
 const pdfDir = path.join(__dirname, '..', 'frontend', 'pdfs');
@@ -641,33 +647,64 @@ app.post('/api/settings', adminAuth, async (req, res) => {
     }
 });
 
-// PDF Routes
-app.get('/api/pdfs', (req, res) => {
+// PDF Routes (MongoDB-based)
+app.get('/api/pdfs', async (req, res) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
-    const pdfDir = path.join(__dirname, '..', 'frontend', 'pdfs');
-    if (!fs.existsSync(pdfDir)) return res.json([]);
-    const files = fs.readdirSync(pdfDir).filter(f => f.endsWith('.pdf')).map(f => ({
-        name: f,
-        url: `/pdfs/${f}`,
-        uploadedAt: fs.statSync(path.join(pdfDir, f)).mtime
-    }));
-    res.json(files.sort((a, b) => b.uploadedAt - a.uploadedAt));
+    if (!isDbConnected) return res.json([]);
+    try {
+        const pdfs = await PDF.find().select('-data').sort({ uploadedAt: -1 });
+        const files = pdfs.map(p => ({
+            _id: p._id,
+            name: p.name,
+            url: `/api/pdfs/file/${p._id}`,
+            size: p.size,
+            uploadedAt: p.uploadedAt
+        }));
+        res.json(files);
+    } catch (err) {
+        res.json([]);
+    }
 });
 
-app.post('/api/pdfs', adminAuth, upload.single('pdf'), (req, res) => {
+app.get('/api/pdfs/file/:id', async (req, res) => {
+    if (!isDbConnected) return res.status(404).json({ message: 'Not found' });
+    try {
+        const pdf = await PDF.findById(req.params.id);
+        if (!pdf) return res.status(404).json({ message: 'PDF not found' });
+        res.set('Content-Type', pdf.contentType);
+        res.set('Content-Disposition', `inline; filename="${pdf.name}"`);
+        res.send(pdf.data);
+    } catch (err) {
+        res.status(500).json({ message: 'Error loading PDF' });
+    }
+});
+
+app.post('/api/pdfs', adminAuth, upload.single('pdf'), async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-    res.json({ message: 'PDF uploaded successfully', file: req.file.filename });
+    try {
+        const newPdf = await PDF.create({
+            name: req.file.originalname,
+            data: req.file.buffer,
+            contentType: req.file.mimetype,
+            size: req.file.size
+        });
+        res.json({ message: 'PDF uploaded successfully', id: newPdf._id, name: newPdf.name });
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to save PDF' });
+    }
 });
 
-app.delete('/api/pdfs/:filename', adminAuth, (req, res) => {
-    const filePath = path.join(__dirname, '..', 'frontend', 'pdfs', req.params.filename);
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        res.json({ message: 'PDF deleted' });
-    } else {
-        res.status(404).json({ message: 'File not found' });
+app.delete('/api/pdfs/:id', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        const result = await PDF.findByIdAndDelete(req.params.id);
+        if (result) res.json({ message: 'PDF deleted' });
+        else res.status(404).json({ message: 'PDF not found' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting PDF' });
     }
 });
 
