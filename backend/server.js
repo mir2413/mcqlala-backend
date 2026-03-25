@@ -401,6 +401,19 @@ app.get('/api/subjects', async (req, res) => {
     }
 });
 
+app.get('/api/subjects/:id', async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        const subject = await Subject.findById(req.params.id);
+        if (!subject) return res.status(404).json({ message: 'Subject not found' });
+        res.json(subject);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/subjects', adminAuth, async (req, res) => {
     if (!isDbConnected) {
         return res.status(503).json({ message: 'Database not connected' });
