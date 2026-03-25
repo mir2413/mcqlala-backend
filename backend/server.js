@@ -1009,33 +1009,59 @@ app.post('/api/users/change-password', adminAuth, async (req, res) => {
     }
 });
 
-// Forgot Password Routes - with REAL EMAIL
-let transporter;
+// Forgot Password Routes - using Resend (free, reliable for cloud hosting)
 let emailServiceReady = false;
 
-try {
-    const nodemailer = require('nodemailer');
-    
-    const emailUser = process.env.EMAIL_USER;
-    const emailPass = process.env.EMAIL_PASS;
-    
-    if (emailUser && emailPass && emailUser !== 'your-email@gmail.com' && emailPass !== 'your-app-password') {
-        transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            auth: {
-                user: emailUser,
-                pass: emailPass
-            }
-        });
-        emailServiceReady = true;
-        console.log('✅ Email service configured:', emailUser);
-    } else {
-        console.warn('⚠️ EMAIL_USER or EMAIL_PASS not set in environment variables');
+async function sendResetEmail(email, resetUrl) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+        console.log(`[DEV] Reset link for ${email}: ${resetUrl}`);
+        return { success: false, message: 'Reset link logged to console' };
     }
-} catch (error) {
-    console.warn('⚠️ Email service error:', error.message);
+    
+    try {
+        const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${resendApiKey}`
+            },
+            body: JSON.stringify({
+                from: 'mcqlala <onboarding@resend.dev>',
+                to: [email],
+                subject: 'mcqlala - Reset Your Password',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+                        <h2 style="color: #3B82F6;">Reset Your mcqlala Password</h2>
+                        <p>Click the button below to reset your password (expires in 1 hour):</p>
+                        <a href="${resetUrl}" style="display: inline-block; background: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0;">Reset Password</a>
+                        <p style="color: #666; font-size: 14px;">Or copy this link:</p>
+                        <p style="color: #3B82F6; word-break: break-all;">${resetUrl}</p>
+                        <p style="color: #999; font-size: 12px;">If you didn't request this, ignore this email.</p>
+                    </div>
+                `
+            })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            console.log(`[EMAIL SENT] Reset email sent to ${email}`);
+            return { success: true };
+        } else {
+            console.error('[EMAIL ERROR]', data);
+            return { success: false, message: data.message };
+        }
+    } catch (err) {
+        console.error('[EMAIL ERROR]', err.message);
+        return { success: false, message: err.message };
+    }
+}
+
+// Check if Resend is configured
+if (process.env.RESEND_API_KEY) {
+    emailServiceReady = true;
+    console.log('✅ Email service configured (Resend)');
+} else {
+    console.warn('⚠️ RESEND_API_KEY not set - emails will be logged to console only');
 }
 
 app.post('/api/users/forgot-password', async (req, res) => {
@@ -1061,31 +1087,24 @@ app.post('/api/users/forgot-password', async (req, res) => {
         user.resetTokenExpiry = expiry;
         await user.save();
         
-        // Send real email
+        // Send email
         const resetUrl = `${req.protocol}://${req.get('host')}/reset-password.html?token=${token}`;
         
-        if (emailServiceReady && transporter) {
-            const mailOptions = {
-                from: process.env.EMAIL_USER || 'noreply@mcqlala.com',
-                to: email,
-                subject: 'mcqlala Password Reset',
-                html: `
-                    <h2>Reset Your mcqlala Password</h2>
-                    <p>Click the link below to reset your password (expires in 1 hour):</p>
-                    <a href="${resetUrl}" style="background: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password</a>
-                    <p>Or copy this link: <code>${resetUrl}</code></p>
-                    <p>If you didn't request this, ignore this email.</p>
-                    <p>Best,<br>mcqlala Team</p>
-                `
-            };
-            
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.error('[EMAIL ERROR]', error);
-                    return res.json({ message: 'Reset link generated! Token in console (email failed)' });
-                }
-                console.log(`[RESET EMAIL SENT] ${email}: ${token}`);
+        if (emailServiceReady) {
+            const result = await sendResetEmail(email, resetUrl);
+            if (result.success) {
                 res.json({ message: 'Reset link sent to your email! Check inbox/spam.' });
+            } else {
+                res.json({ message: 'Reset link generated! Check server console.' });
+            }
+        } else {
+            console.log(`\n[DEV] Reset link for ${email}: ${resetUrl}\n`);
+            res.json({ message: 'Reset link generated! Check server console.' });
+        }
+    } catch (err) {
+        res.status(500).json({ message: 'Error processing request' });
+    }
+});
             });
         } else {
             console.log(`\n[DEV MODE] Password Reset Token for ${email}: ${token}\n`);
