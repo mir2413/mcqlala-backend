@@ -43,21 +43,19 @@ function checkAuth() {
 
     console.log('🔍 checkAuth() called');
     
-    // Pages that are public (don't require login)
-    const publicPages = ['index.html', 'login.html', 'register.html', ''];
+    // Pages that require login
+    const protectedPages = ['admin.html', 'profile.html'];
 
     // Only redirect if NOT logged in AND trying to access a protected page
-    if (!isLogged && !publicPages.includes(page) && path !== '/') {
+    if (!isLogged && protectedPages.includes(page)) {
         console.log('❌ Restricted Access - redirecting to login');
         sessionStorage.setItem('authRedirect', 'Please log in to access that page.');
         window.location.href = 'login.html';
+    } else if (page === 'admin.html' && !user.isAdmin) {
+        console.log('❌ Admin Access Denied - redirecting to home');
+        window.location.href = 'index.html';
     } else {
-        if (page === 'admin.html' && !user.isAdmin) {
-            console.log('❌ Admin Access Denied - redirecting to home');
-            window.location.href = 'index.html';
-            return;
-        }
-        console.log('   ✅ Logged in as:', localStorage.getItem('username'));
+        console.log('   ✅ Access granted:', localStorage.getItem('username') || 'Guest');
     }
 }
 
