@@ -1025,24 +1025,32 @@ const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 
 if (EMAIL_USER && EMAIL_PASS) {
-    emailTransporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: EMAIL_USER,
-            pass: EMAIL_PASS
+    // Resolve IPv4 directly because Render free tier blocks outbound IPv6
+    require('dns').resolve4('smtp.gmail.com', (err, addresses) => {
+        if (!err && addresses.length > 0) {
+            emailTransporter = nodemailer.createTransport({
+                host: addresses[0],
+                port: 465,
+                secure: true,
+                auth: {
+                    user: EMAIL_USER,
+                    pass: EMAIL_PASS
+                },
+                tls: { servername: 'smtp.gmail.com' } // SNI requirement
+            });
+            
+            emailTransporter.verify()
+                .then(() => {
+                    emailServiceReady = true;
+                    console.log('✅ Email service configured (Nodemailer on IPv4 + Gmail SMTP)');
+                })
+                .catch((err) => {
+                    console.error('❌ Email service failed to connect:', err.message);
+                });
+        } else {
+            console.error('❌ Failed to resolve smtp.gmail.com to an IPv4 address', err);
         }
     });
-    
-    // Verify connection on startup
-    emailTransporter.verify()
-        .then(() => {
-            emailServiceReady = true;
-            console.log('✅ Email service configured (Nodemailer + Gmail SMTP)');
-        })
-        .catch((err) => {
-            console.error('❌ Email service failed to connect:', err.message);
-            console.error('👉 Check EMAIL_USER and EMAIL_PASS (Gmail App Password) in environment variables');
-        });
 } else {
     console.warn('⚠️ EMAIL_USER and EMAIL_PASS not set - reset emails will be logged to console only');
 }
