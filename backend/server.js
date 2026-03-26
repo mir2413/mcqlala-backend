@@ -1089,8 +1089,9 @@ app.post('/api/users/forgot-password', async (req, res) => {
         user.resetTokenExpiry = expiry;
         await user.save();
         
-        // Send email
-        const resetUrl = `${req.protocol}://${req.get('host')}/reset-password.html?token=${token}`;
+        // Send email - link to frontend, not backend
+        const frontendUrl = process.env.FRONTEND_URL || 'https://mcqlala.in';
+        const resetUrl = `${frontendUrl}/reset-password.html?token=${token}`;
         
         if (emailServiceReady) {
             const result = await sendResetEmail(email, resetUrl);
