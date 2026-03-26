@@ -256,6 +256,23 @@ app.use(helmet({
 
 app.use(cookieParser());
 
+// CORS Middleware - Must be configured BEFORE CSRF and other routes
+const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3004'];
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (corsOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
+
 // CSRF Protection
 const Tokens = require('csrf');
 const csrfTokens = new Tokens();
@@ -303,23 +320,6 @@ const csrfProtection = (req, res, next) => {
 };
 
 app.use(csrfProtection);
-
-// CORS Middleware - Must be configured before routes
-const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3004'];
-app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        if (corsOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
-}));
 
 // Security: Block access to sensitive server files
 app.use((req, res, next) => {
