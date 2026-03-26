@@ -1031,7 +1031,6 @@ async function sendResetEmail(email, resetUrl) {
     
     try {
         const nodemailer = require('nodemailer');
-        const net = require('net');
         
         // Resolve Gmail SMTP to IPv4 manually
         const gmailIPv4 = await new Promise((resolve, reject) => {
@@ -1046,9 +1045,8 @@ async function sendResetEmail(email, resetUrl) {
         
         const transporter = nodemailer.createTransport({
             host: gmailIPv4,
-            port: 587,
-            secure: false,
-            requireTLS: true,
+            port: 465,
+            secure: true,
             tls: { servername: 'smtp.gmail.com' },
             connectionTimeout: 15000,
             greetingTimeout: 10000,
