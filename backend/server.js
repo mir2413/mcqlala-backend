@@ -91,7 +91,9 @@ const userSchema = new mongoose.Schema({
     email: String,
     password: String,
     isAdmin: { type: Boolean, default: false },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    resetToken: String,
+    resetTokenExpiry: Number
 });
 
 const subjectSchema = new mongoose.Schema({
