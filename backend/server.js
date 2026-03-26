@@ -1031,12 +1031,25 @@ async function sendResetEmail(email, resetUrl) {
     
     try {
         const nodemailer = require('nodemailer');
+        const net = require('net');
+        
+        // Resolve Gmail SMTP to IPv4 manually
+        const gmailIPv4 = await new Promise((resolve, reject) => {
+            const dns = require('dns');
+            dns.resolve4('smtp.gmail.com', (err, addresses) => {
+                if (err || !addresses.length) reject(new Error('DNS lookup failed'));
+                else resolve(addresses[0]);
+            });
+        });
+        
+        console.log(`[EMAIL] Using SMTP IP: ${gmailIPv4}`);
         
         const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
+            host: gmailIPv4,
             port: 587,
             secure: false,
             requireTLS: true,
+            tls: { servername: 'smtp.gmail.com' },
             connectionTimeout: 15000,
             greetingTimeout: 10000,
             socketTimeout: 15000,
