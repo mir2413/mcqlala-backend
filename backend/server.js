@@ -1021,6 +1021,8 @@ async function sendResetEmail(email, resetUrl) {
         return { success: false, message: 'Reset link logged to console' };
     }
     
+    console.log(`[EMAIL] Attempting to send reset email to: ${email}`);
+    
     try {
         const response = await fetch('https://api.resend.com/emails', {
             method: 'POST',
@@ -1045,6 +1047,8 @@ async function sendResetEmail(email, resetUrl) {
             })
         });
         const data = await response.json();
+        console.log(`[EMAIL] Resend response status: ${response.status}`);
+        console.log(`[EMAIL] Resend response:`, JSON.stringify(data));
         if (response.ok) {
             console.log(`[EMAIL SENT] Reset email sent to ${email}`);
             return { success: true };
