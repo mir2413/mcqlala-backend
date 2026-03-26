@@ -260,15 +260,16 @@ app.use(cookieParser());
 const Tokens = require('csrf');
 const csrfTokens = new Tokens();
 
-// Generate CSRF secret and store in cookie
+// Generate CSRF secret and store in cookie (cross-origin compatible)
 app.use((req, res, next) => {
     let secret = req.cookies['csrf-secret'];
     if (!secret) {
         secret = csrfTokens.secretSync();
+        const isProduction = process.env.NODE_ENV === 'production';
         res.cookie('csrf-secret', secret, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: isProduction,
+            sameSite: isProduction ? 'none' : 'lax',
             maxAge: 24 * 60 * 60 * 1000 // 24 hours
         });
     }
@@ -480,10 +481,11 @@ app.get('/api/users/me', auth, async (req, res) => {
 
 // Logout mechanism securely clears the cookie
 app.post('/api/users/logout', (req, res) => {
+    const isProduction = process.env.NODE_ENV === 'production';
     res.clearCookie('jwt', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax'
     });
     res.json({ message: 'Logged out successfully' });
 });
@@ -977,12 +979,12 @@ app.post('/api/users/login', loginLimiter, async (req, res) => {
         // Generate JWT token
         const token = jwt.sign({ userId: user._id, isAdmin: user.isAdmin }, JWT_SECRET, { expiresIn: '1d' });
         
-        // Set HttpOnly cookie
+        // Set HttpOnly cookie (cross-origin compatible for Vercel/Render)
         const isProduction = process.env.NODE_ENV === 'production';
         res.cookie('jwt', token, {
             httpOnly: true,
             secure: isProduction,
-            sameSite: 'lax',
+            sameSite: isProduction ? 'none' : 'lax',
             maxAge: 24 * 60 * 60 * 1000
         });
         
