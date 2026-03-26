@@ -13,6 +13,10 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 
+// Force IPv4 DNS resolution (Render free tier doesn't support IPv6 outbound)
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
     console.error('❌ ERROR: JWT_SECRET environment variable is not set.');
