@@ -262,9 +262,21 @@ app.use(cors({
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
+        
+        // Check if origin is in allowed list
         if (corsOrigins.indexOf(origin) !== -1) {
             callback(null, true);
-        } else {
+        }
+        // Allow all Vercel preview deployments
+        else if (origin && origin.endsWith('.vercel.app')) {
+            callback(null, true);
+        }
+        // Allow mcqlala.in domain
+        else if (origin && (origin.includes('mcqlala.in') || origin.includes('mcqlala.com'))) {
+            callback(null, true);
+        }
+        else {
+            console.warn(`[CORS] Blocked origin: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
