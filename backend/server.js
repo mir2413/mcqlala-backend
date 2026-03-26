@@ -198,6 +198,19 @@ connectDB();
 app.set('trust proxy', 1);
 app.disable('x-powered-by'); // Hide server technology (Security)
 
+// Unified Security Headers - Apply to ALL responses
+const securityHeaders = (req, res, next) => {
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()');
+    res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+    res.setHeader('X-DNS-Prefetch-Control', 'off');
+    next();
+};
+app.use(securityHeaders);
+
 app.use((req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.set('Pragma', 'no-cache');
@@ -212,7 +225,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// Security Headers
+// Security Headers - Helmet.js (CSP and HSTS only, other headers in unified middleware)
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -231,24 +244,14 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: false,
     crossOriginResourcePolicy: false,
-    xContentTypeOptions: true,
     hsts: process.env.NODE_ENV === 'production' ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
-    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-    xFrameOptions: { action: "deny" },
-    xPermittedCrossDomainPolicies: { permittedPolicies: "none" },
-    xDnsPrefetchControl: { allow: false },
-    permissionsPolicy: {
-        features: {
-            accelerometer: ["()"],
-            camera: ["()"],
-            geolocation: ["()"],
-            gyroscope: ["()"],
-            magnetometer: ["()"],
-            microphone: ["()"],
-            payment: ["()"],
-            usb: ["()"]
-        }
-    }
+    // Disable duplicate headers (handled by unified middleware)
+    xContentTypeOptions: false,
+    referrerPolicy: false,
+    xFrameOptions: false,
+    xPermittedCrossDomainPolicies: false,
+    xDnsPrefetchControl: false,
+    permissionsPolicy: false
 }));
 
 app.use(cookieParser());
@@ -365,15 +368,7 @@ app.use((req, res, next) => {
 
 // Serve static files (HTML, CSS, JS) from frontend directory
 const frontendPath = path.join(__dirname, '..', 'frontend');
-app.use(express.static(frontendPath, {
-    setHeaders: (res, path) => {
-        res.setHeader('X-Content-Type-Options', 'nosniff');
-        res.setHeader('X-Frame-Options', 'DENY');
-        res.setHeader('X-XSS-Protection', '1; mode=block');
-        res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-        res.setHeader('Permissions-Policy', 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()');
-    }
-}));
+app.use(express.static(frontendPath));
 
 // Middleware to parse JSON bodies (Move after static files to avoid parsing static requests)
 app.use(express.json({ limit: '1mb' }));
