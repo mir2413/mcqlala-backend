@@ -1329,7 +1329,10 @@ const sslKeyPath = process.env.SSL_KEY_PATH;
 const sslCertPath = process.env.SSL_CERT_PATH;
 const sslCaPath = process.env.SSL_CA_PATH;
 
-if (sslKeyPath && sslCertPath && process.env.NODE_ENV === 'production') {
+// Detect if running on PaaS platforms (Render, Vercel, Heroku, Railway)
+const isPaaS = process.env.RENDER || process.env.VERCEL || process.env.DYNO || process.env.RAILWAY_ENVIRONMENT;
+
+if (sslKeyPath && sslCertPath && process.env.NODE_ENV === 'production' && !isPaaS) {
     const https = require('https');
     const sslOptions = {
         key: fs.readFileSync(sslKeyPath),
@@ -1343,8 +1346,11 @@ if (sslKeyPath && sslCertPath && process.env.NODE_ENV === 'production') {
 } else {
     server = app.listen(PORT, () => {
         console.log(`Server running at http://localhost:${PORT}`);
-        if (process.env.NODE_ENV === 'production') {
+        if (process.env.NODE_ENV === 'production' && !isPaaS) {
             console.log('⚠️  WARNING: Running without HTTPS in production!');
+        }
+        if (isPaaS) {
+            console.log('✅ Running on PaaS platform - HTTPS handled by infrastructure');
         }
     });
 }
