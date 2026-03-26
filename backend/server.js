@@ -206,27 +206,33 @@ app.use((req, res, next) => {
     next();
 });
 
+// Generate nonce for each request (for CSP)
+app.use((req, res, next) => {
+    res.locals.nonce = require('crypto').randomBytes(16).toString('base64');
+    next();
+});
+
 // Security Headers
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "cdnjs.cloudflare.com"],
-            styleSrc: ["'self'", "cdnjs.cloudflare.com", "fonts.googleapis.com", "'unsafe-inline'"],
+            scriptSrc: ["'self'", "cdnjs.cloudflare.com", (req, res) => `'nonce-${res.locals.nonce}'`],
+            styleSrc: ["'self'", "cdnjs.cloudflare.com", "fonts.googleapis.com", (req, res) => `'nonce-${res.locals.nonce}'`],
             fontSrc: ["'self'", "cdnjs.cloudflare.com", "fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "blob:"],
             connectSrc: ["'self'"],
             frameSrc: ["'none'"],
             objectSrc: ["'none'"],
             frameAncestors: ["'none'"],
-            upgradeInsecureRequests: []
+            upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
         }
     },
     crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: false,
     crossOriginResourcePolicy: false,
     xContentTypeOptions: true,
-    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    hsts: process.env.NODE_ENV === 'production' ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
     xFrameOptions: { action: "deny" },
     xPermittedCrossDomainPolicies: { permittedPolicies: "none" },
@@ -247,20 +253,113 @@ app.use(helmet({
 
 app.use(cookieParser());
 
+// CSRF Protection
+const Tokens = require('csrf');
+const csrfTokens = new Tokens();
+
+// Generate CSRF secret and store in cookie
+app.use((req, res, next) => {
+    let secret = req.cookies['csrf-secret'];
+    if (!secret) {
+        secret = csrfTokens.secretSync();
+        res.cookie('csrf-secret', secret, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        });
+    }
+    req.csrfSecret = secret;
+    next();
+});
+
+// CSRF token endpoint - frontend can get token from here
+app.get('/api/csrf-token', (req, res) => {
+    const token = csrfTokens.create(req.csrfSecret);
+    res.json({ csrfToken: token });
+});
+
+// CSRF validation middleware for state-changing requests
+const csrfProtection = (req, res, next) => {
+    // Skip CSRF for GET, HEAD, OPTIONS requests
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+        return next();
+    }
+    
+    // Skip CSRF for login and register (they don't have token yet)
+    if (req.path === '/api/users/login' || req.path === '/api/users/register' || req.path === '/api/users/forgot-password' || req.path === '/api/users/reset-password') {
+        return next();
+    }
+    
+    const token = req.headers['x-csrf-token'] || req.body._csrf;
+    if (!token || !csrfTokens.verify(req.csrfSecret, token)) {
+        return res.status(403).json({ message: 'Invalid CSRF token' });
+    }
+    next();
+};
+
+app.use(csrfProtection);
+
 // CORS Middleware - Must be configured before routes
-const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3004', 'https://mcqlala.in', 'https://www.mcqlala.in', 'https://mcqlala-backend.vercel.app', 'https://mcqlala-backend-1.onrender.com'];
+const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3004'];
 app.use(cors({
-    origin: corsOrigins,
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (corsOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'] 
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
 // Security: Block access to sensitive server files
 app.use((req, res, next) => {
-    const forbiddenFiles = ['/server.js', '/database.json', '/.env', '/migrate.js', '/package.json', '/package-lock.json', '/TODO.md'];
+    const forbiddenFiles = ['/server.js', '/database.json', '/.env', '/migrate.js', '/package.json', '/package-lock.json', '/TODO.md', '/.gitignore', '/.env.example'];
     if (forbiddenFiles.includes(req.path)) {
+        console.warn(`[SECURITY] Blocked access to sensitive file: ${req.path} from ${req.ip}`);
         return res.status(403).json({ message: 'Forbidden' });
     }
+    next();
+});
+
+// Security Logging Middleware
+app.use((req, res, next) => {
+    const startTime = Date.now();
+    
+    // Log after response
+    res.on('finish', () => {
+        const duration = Date.now() - startTime;
+        const logData = {
+            timestamp: new Date().toISOString(),
+            method: req.method,
+            path: req.path,
+            status: res.statusCode,
+            duration: `${duration}ms`,
+            ip: req.ip,
+            userAgent: req.get('User-Agent')
+        };
+        
+        // Log security events
+        if (res.statusCode === 401 || res.statusCode === 403) {
+            console.warn(`[SECURITY] ${res.statusCode} - ${req.method} ${req.path} - IP: ${req.ip}`);
+        }
+        
+        // Log errors
+        if (res.statusCode >= 500) {
+            console.error(`[ERROR] ${res.statusCode} - ${req.method} ${req.path} - IP: ${req.ip}`);
+        }
+        
+        // Log slow requests (> 1000ms)
+        if (duration > 1000) {
+            console.warn(`[PERFORMANCE] Slow request: ${req.method} ${req.path} - ${duration}ms`);
+        }
+    });
+    
     next();
 });
 
@@ -297,18 +396,25 @@ if (!fs.existsSync(pdfDir)) {
 // Rate Limiting Middleware (Move after static files to allow UI to load freely)
 const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60 * 1000,
-    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000, // 1000 requests per minute
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
     message: { message: 'Too many requests from this IP, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
-    skip: () => process.env.NODE_ENV === 'development' // Only skip in development
+    skip: (req) => {
+        // Skip rate limiting for static files
+        if (req.path.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+            return true;
+        }
+        // Skip in development if configured
+        return process.env.NODE_ENV === 'development' && process.env.SKIP_RATE_LIMIT === 'true';
+    }
 });
 
 // Specific Rate Limiter for Login/Register (Stricter)
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Limit each IP to 5 login requests per window
-    message: { message: 'Too many login attempts, please try again after 15 minutes.' },
+    windowMs: parseInt(process.env.LOGIN_RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+    max: parseInt(process.env.LOGIN_RATE_LIMIT_MAX_REQUESTS) || 5,
+    message: { message: 'Too many login attempts, please try again later.' },
     skipSuccessfulRequests: true,
 });
 
@@ -1163,6 +1269,49 @@ app.post('/api/users/reset-password', async (req, res) => {
     }
 });
 
+// Security audit endpoint (admin only)
+app.get('/api/security/audit', adminAuth, (req, res) => {
+    const audit = {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        httpsEnabled: !!(sslKeyPath && sslCertPath && process.env.NODE_ENV === 'production'),
+        corsOrigins: corsOrigins,
+        rateLimiting: {
+            enabled: true,
+            general: {
+                windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 60000,
+                max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100
+            },
+            login: {
+                windowMs: parseInt(process.env.LOGIN_RATE_LIMIT_WINDOW_MS) || 900000,
+                max: parseInt(process.env.LOGIN_RATE_LIMIT_MAX_REQUESTS) || 5
+            }
+        },
+        securityHeaders: {
+            helmet: true,
+            hsts: process.env.NODE_ENV === 'production',
+            csp: true,
+            xFrameOptions: true,
+            xContentTypeOptions: true
+        },
+        authentication: {
+            jwt: true,
+            httpOnlyCookies: true,
+            csrfProtection: true
+        },
+        database: {
+            type: 'mongodb',
+            connected: isDbConnected
+        },
+        email: {
+            configured: emailServiceReady
+        }
+    };
+    
+    console.log(`[SECURITY AUDIT] Performed by admin: ${req.user.username}`);
+    res.json(audit);
+});
+
 // Fallback to index.html for any other requests (useful for SPA, though this is a multi-page site)
 app.get('*', (req, res) => {
     const frontendDir = path.join(__dirname, '..', 'frontend');
@@ -1174,9 +1323,31 @@ app.get('*', (req, res) => {
     }
 });
 
-const server = app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-});
+// HTTPS Configuration (for production with SSL)
+let server;
+const sslKeyPath = process.env.SSL_KEY_PATH;
+const sslCertPath = process.env.SSL_CERT_PATH;
+const sslCaPath = process.env.SSL_CA_PATH;
+
+if (sslKeyPath && sslCertPath && process.env.NODE_ENV === 'production') {
+    const https = require('https');
+    const sslOptions = {
+        key: fs.readFileSync(sslKeyPath),
+        cert: fs.readFileSync(sslCertPath),
+        ...(sslCaPath && { ca: fs.readFileSync(sslCaPath) })
+    };
+    server = https.createServer(sslOptions, app);
+    server.listen(PORT, () => {
+        console.log(`🔒 HTTPS Server running at https://localhost:${PORT}`);
+    });
+} else {
+    server = app.listen(PORT, () => {
+        console.log(`Server running at http://localhost:${PORT}`);
+        if (process.env.NODE_ENV === 'production') {
+            console.log('⚠️  WARNING: Running without HTTPS in production!');
+        }
+    });
+}
 
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
