@@ -686,9 +686,20 @@ app.delete('/api/mcqs/:id', adminAuth, async (req, res) => {
         return res.status(503).json({ message: 'Database not connected' });
     }
     try {
-        await MCQ.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Deleted' });
+        const mcqId = req.params.id;
+        console.log(`[DELETE MCQ] Attempting to delete MCQ with ID: ${mcqId}`);
+        
+        const result = await MCQ.findByIdAndDelete(mcqId);
+        
+        if (!result) {
+            console.log(`[DELETE MCQ] MCQ not found with ID: ${mcqId}`);
+            return res.status(404).json({ message: 'MCQ not found' });
+        }
+        
+        console.log(`[DELETE MCQ] Successfully deleted MCQ: ${result._id}`);
+        res.json({ message: 'Deleted successfully' });
     } catch (err) {
+        console.error(`[DELETE MCQ] Error: ${err.message}`);
         res.status(500).json({ error: err.message });
     }
 });
