@@ -1019,8 +1019,10 @@ app.post('/api/users/change-password', adminAuth, async (req, res) => {
 let emailServiceReady = false;
 
 async function sendResetEmail(email, resetUrl) {
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (!resendApiKey) {
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailPass = process.env.GMAIL_APP_PASSWORD;
+    
+    if (!gmailUser || !gmailPass) {
         console.log(`[DEV] Reset link for ${email}: ${resetUrl}`);
         return { success: false, message: 'Reset link logged to console' };
     }
@@ -1028,12 +1030,22 @@ async function sendResetEmail(email, resetUrl) {
     console.log(`[EMAIL] Attempting to send reset email to: ${email}`);
     
     try {
-        const { Resend } = require('resend');
-        const resend = new Resend(resendApiKey);
+        const nodemailer = require('nodemailer');
+        
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            family: 4, // Force IPv4
+            auth: {
+                user: gmailUser,
+                pass: gmailPass
+            }
+        });
 
-        const { data, error } = await resend.emails.send({
-            from: 'mcqlala <noreply@mcqlala.in>',
-            to: [email],
+        const info = await transporter.sendMail({
+            from: `"mcqlala" <${gmailUser}>`,
+            to: email,
             subject: 'mcqlala - Reset Your Password',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
@@ -1047,12 +1059,7 @@ async function sendResetEmail(email, resetUrl) {
             `
         });
 
-        if (error) {
-            console.error('[EMAIL ERROR]', JSON.stringify(error));
-            return { success: false, message: error.message };
-        }
-
-        console.log(`[EMAIL SENT] Reset email sent to ${email}`, data);
+        console.log(`[EMAIL SENT] Reset email sent to ${email}:`, info.messageId);
         return { success: true };
     } catch (err) {
         console.error('[EMAIL ERROR]', err.message);
@@ -1060,12 +1067,12 @@ async function sendResetEmail(email, resetUrl) {
     }
 }
 
-// Check if Resend is configured
-if (process.env.RESEND_API_KEY) {
+// Check if email is configured
+if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
     emailServiceReady = true;
-    console.log('✅ Email service configured (Resend)');
+    console.log('✅ Email service configured (Gmail SMTP)');
 } else {
-    console.warn('⚠️ RESEND_API_KEY not set - emails will be logged to console only');
+    console.warn('⚠️ GMAIL_USER and GMAIL_APP_PASSWORD not set - emails will be logged to console only');
 }
 
 app.post('/api/users/forgot-password', async (req, res) => {
