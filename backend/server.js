@@ -1015,14 +1015,40 @@ app.post('/api/users/change-password', adminAuth, async (req, res) => {
     }
 });
 
-// Forgot Password Routes - using Resend (free, reliable for cloud hosting)
+// Forgot Password Routes - using Nodemailer + Gmail SMTP (free, open-source)
+const nodemailer = require('nodemailer');
 let emailServiceReady = false;
+let emailTransporter = null;
+
+// Configure Nodemailer with Gmail SMTP
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+
+if (EMAIL_USER && EMAIL_PASS) {
+    emailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: EMAIL_USER,
+            pass: EMAIL_PASS
+        }
+    });
+    
+    // Verify connection on startup
+    emailTransporter.verify()
+        .then(() => {
+            emailServiceReady = true;
+            console.log('✅ Email service configured (Nodemailer + Gmail SMTP)');
+        })
+        .catch((err) => {
+            console.error('❌ Email service failed to connect:', err.message);
+            console.error('👉 Check EMAIL_USER and EMAIL_PASS (Gmail App Password) in environment variables');
+        });
+} else {
+    console.warn('⚠️ EMAIL_USER and EMAIL_PASS not set - reset emails will be logged to console only');
+}
 
 async function sendResetEmail(email, resetUrl) {
-    const sendgridKey = process.env.SENDGRID_API_KEY;
-    const gmailUser = process.env.GMAIL_USER;
-    
-    if (!sendgridKey || !gmailUser) {
+    if (!emailTransporter || !emailServiceReady) {
         console.log(`[DEV] Reset link for ${email}: ${resetUrl}`);
         return { success: false, message: 'Reset link logged to console' };
     }
@@ -1030,12 +1056,9 @@ async function sendResetEmail(email, resetUrl) {
     console.log(`[EMAIL] Attempting to send reset email to: ${email}`);
     
     try {
-        const sgMail = require('@sendgrid/mail');
-        sgMail.setApiKey(sendgridKey);
-
-        const msg = {
+        const mailOptions = {
+            from: `"mcqlala" <${EMAIL_USER}>`,
             to: email,
-            from: gmailUser,
             subject: 'mcqlala - Reset Your Password',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
@@ -1049,22 +1072,13 @@ async function sendResetEmail(email, resetUrl) {
             `
         };
 
-        await sgMail.send(msg);
+        await emailTransporter.sendMail(mailOptions);
         console.log(`[EMAIL SENT] Reset email sent to ${email}`);
         return { success: true };
     } catch (err) {
         console.error('[EMAIL ERROR]', err.message);
-        if (err.response) console.error('[EMAIL ERROR DETAILS]', JSON.stringify(err.response.body));
         return { success: false, message: err.message };
     }
-}
-
-// Check if email is configured
-if (process.env.SENDGRID_API_KEY && process.env.GMAIL_USER) {
-    emailServiceReady = true;
-    console.log('✅ Email service configured (SendGrid)');
-} else {
-    console.warn('⚠️ SENDGRID_API_KEY and GMAIL_USER not set - emails will be logged to console only');
 }
 
 app.post('/api/users/forgot-password', async (req, res) => {
