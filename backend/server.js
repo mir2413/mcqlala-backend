@@ -1019,10 +1019,10 @@ app.post('/api/users/change-password', adminAuth, async (req, res) => {
 let emailServiceReady = false;
 
 async function sendResetEmail(email, resetUrl) {
+    const sendgridKey = process.env.SENDGRID_API_KEY;
     const gmailUser = process.env.GMAIL_USER;
-    const gmailPass = process.env.GMAIL_APP_PASSWORD;
     
-    if (!gmailUser || !gmailPass) {
+    if (!sendgridKey || !gmailUser) {
         console.log(`[DEV] Reset link for ${email}: ${resetUrl}`);
         return { success: false, message: 'Reset link logged to console' };
     }
@@ -1030,36 +1030,12 @@ async function sendResetEmail(email, resetUrl) {
     console.log(`[EMAIL] Attempting to send reset email to: ${email}`);
     
     try {
-        const nodemailer = require('nodemailer');
-        
-        // Resolve Gmail SMTP to IPv4 manually
-        const gmailIPv4 = await new Promise((resolve, reject) => {
-            const dns = require('dns');
-            dns.resolve4('smtp.gmail.com', (err, addresses) => {
-                if (err || !addresses.length) reject(new Error('DNS lookup failed'));
-                else resolve(addresses[0]);
-            });
-        });
-        
-        console.log(`[EMAIL] Using SMTP IP: ${gmailIPv4}`);
-        
-        const transporter = nodemailer.createTransport({
-            host: gmailIPv4,
-            port: 465,
-            secure: true,
-            tls: { servername: 'smtp.gmail.com' },
-            connectionTimeout: 15000,
-            greetingTimeout: 10000,
-            socketTimeout: 15000,
-            auth: {
-                user: gmailUser,
-                pass: gmailPass
-            }
-        });
+        const sgMail = require('@sendgrid/mail');
+        sgMail.setApiKey(sendgridKey);
 
-        const info = await transporter.sendMail({
-            from: `"mcqlala" <${gmailUser}>`,
+        const msg = {
             to: email,
+            from: gmailUser,
             subject: 'mcqlala - Reset Your Password',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
@@ -1071,22 +1047,24 @@ async function sendResetEmail(email, resetUrl) {
                     <p style="color: #999; font-size: 12px;">If you didn't request this, ignore this email.</p>
                 </div>
             `
-        });
+        };
 
-        console.log(`[EMAIL SENT] Reset email sent to ${email}:`, info.messageId);
+        await sgMail.send(msg);
+        console.log(`[EMAIL SENT] Reset email sent to ${email}`);
         return { success: true };
     } catch (err) {
         console.error('[EMAIL ERROR]', err.message);
+        if (err.response) console.error('[EMAIL ERROR DETAILS]', JSON.stringify(err.response.body));
         return { success: false, message: err.message };
     }
 }
 
 // Check if email is configured
-if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+if (process.env.SENDGRID_API_KEY && process.env.GMAIL_USER) {
     emailServiceReady = true;
-    console.log('✅ Email service configured (Gmail SMTP)');
+    console.log('✅ Email service configured (SendGrid)');
 } else {
-    console.warn('⚠️ GMAIL_USER and GMAIL_APP_PASSWORD not set - emails will be logged to console only');
+    console.warn('⚠️ SENDGRID_API_KEY and GMAIL_USER not set - emails will be logged to console only');
 }
 
 app.post('/api/users/forgot-password', async (req, res) => {
