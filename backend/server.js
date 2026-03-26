@@ -1029,7 +1029,7 @@ async function sendResetEmail(email, resetUrl) {
                 'Authorization': `Bearer ${resendApiKey}`
             },
             body: JSON.stringify({
-                from: 'mcqlala <onboarding@resend.dev>',
+                from: 'mcqlala <noreply@mcqlala.in>',
                 to: [email],
                 subject: 'mcqlala - Reset Your Password',
                 html: `
