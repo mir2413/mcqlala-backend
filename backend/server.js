@@ -1305,11 +1305,77 @@ app.get('/api/security/audit', adminAuth, (req, res) => {
         },
         email: {
             configured: emailServiceReady
+        },
+        backups: {
+            enabled: true,
+            schedule: '0 2 * * *',
+            maxBackups: 7
         }
     };
     
     console.log(`[SECURITY AUDIT] Performed by admin: ${req.user.username}`);
     res.json(audit);
+});
+
+// Database Backup Routes (Admin Only)
+const DatabaseBackup = require('./backup');
+const backupManager = new DatabaseBackup();
+
+// Schedule automatic daily backups at 2 AM
+if (isDbConnected) {
+    backupManager.scheduleBackup('0 2 * * *');
+}
+
+// Create manual backup
+app.post('/api/backup/create', adminAuth, async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        const result = await backupManager.exportDatabase();
+        if (result.success) {
+            console.log(`[BACKUP] Admin ${req.user.username} created backup: ${result.filename}`);
+            res.json({ message: 'Backup created successfully', filename: result.filename });
+        } else {
+            res.status(500).json({ message: 'Backup failed', error: result.error });
+        }
+    } catch (err) {
+        res.status(500).json({ message: 'Backup failed', error: err.message });
+    }
+});
+
+// List all backups
+app.get('/api/backup/list', adminAuth, (req, res) => {
+    const backups = backupManager.listBackups();
+    res.json({ backups });
+});
+
+// Restore from backup
+app.post('/api/backup/restore/:filename', adminAuth, async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        const result = await backupManager.restoreDatabase(req.params.filename);
+        if (result.success) {
+            console.log(`[BACKUP] Admin ${req.user.username} restored from: ${req.params.filename}`);
+            res.json({ message: 'Database restored successfully', filename: req.params.filename });
+        } else {
+            res.status(500).json({ message: 'Restore failed', error: result.error });
+        }
+    } catch (err) {
+        res.status(500).json({ message: 'Restore failed', error: err.message });
+    }
+});
+
+// Download backup file
+app.get('/api/backup/download/:filename', adminAuth, (req, res) => {
+    const filepath = require('path').join(__dirname, '..', 'backups', req.params.filename);
+    if (require('fs').existsSync(filepath)) {
+        res.download(filepath);
+    } else {
+        res.status(404).json({ message: 'Backup file not found' });
+    }
 });
 
 // Fallback to index.html for any other requests (useful for SPA, though this is a multi-page site)
