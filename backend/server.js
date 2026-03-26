@@ -1120,15 +1120,6 @@ app.post('/api/users/forgot-password', async (req, res) => {
         res.status(500).json({ message: 'Error processing request' });
     }
 });
-            });
-        } else {
-            console.log(`\n[DEV MODE] Password Reset Token for ${email}: ${token}\n`);
-            res.json({ message: 'Email service unavailable. Reset token logged to server console.' });
-        }
-    } catch (err) {
-        res.status(500).json({ message: 'Error processing request' });
-    }
-});
 
 app.post('/api/users/reset-password', async (req, res) => {
     if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
