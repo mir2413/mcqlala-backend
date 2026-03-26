@@ -1027,43 +1027,67 @@ async function sendResetEmail(email, resetUrl) {
     
     console.log(`[EMAIL] Attempting to send reset email to: ${email}`);
     
-    try {
-        const response = await fetch('https://api.resend.com/emails', {
+    return new Promise((resolve) => {
+        const https = require('https');
+        const payload = JSON.stringify({
+            from: 'mcqlala <noreply@mcqlala.in>',
+            to: [email],
+            subject: 'mcqlala - Reset Your Password',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #3B82F6;">Reset Your mcqlala Password</h2>
+                    <p>Click the button below to reset your password (expires in 1 hour):</p>
+                    <a href="${resetUrl}" style="display: inline-block; background: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0;">Reset Password</a>
+                    <p style="color: #666; font-size: 14px;">Or copy this link:</p>
+                    <p style="color: #3B82F6; word-break: break-all;">${resetUrl}</p>
+                    <p style="color: #999; font-size: 12px;">If you didn't request this, ignore this email.</p>
+                </div>
+            `
+        });
+
+        const options = {
+            hostname: 'api.resend.com',
+            port: 443,
+            path: '/emails',
             method: 'POST',
+            family: 4, // Force IPv4
+            timeout: 15000,
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${resendApiKey}`
-            },
-            body: JSON.stringify({
-                from: 'mcqlala <noreply@mcqlala.in>',
-                to: [email],
-                subject: 'mcqlala - Reset Your Password',
-                html: `
-                    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-                        <h2 style="color: #3B82F6;">Reset Your mcqlala Password</h2>
-                        <p>Click the button below to reset your password (expires in 1 hour):</p>
-                        <a href="${resetUrl}" style="display: inline-block; background: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0;">Reset Password</a>
-                        <p style="color: #666; font-size: 14px;">Or copy this link:</p>
-                        <p style="color: #3B82F6; word-break: break-all;">${resetUrl}</p>
-                        <p style="color: #999; font-size: 12px;">If you didn't request this, ignore this email.</p>
-                    </div>
-                `
-            })
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', (chunk) => { data += chunk; });
+            res.on('end', () => {
+                console.log(`[EMAIL] Resend response status: ${res.statusCode}`);
+                console.log(`[EMAIL] Resend response: ${data}`);
+                if (res.statusCode === 200) {
+                    console.log(`[EMAIL SENT] Reset email sent to ${email}`);
+                    resolve({ success: true });
+                } else {
+                    resolve({ success: false, message: data });
+                }
+            });
         });
-        const data = await response.json();
-        console.log(`[EMAIL] Resend response status: ${response.status}`);
-        console.log(`[EMAIL] Resend response:`, JSON.stringify(data));
-        if (response.ok) {
-            console.log(`[EMAIL SENT] Reset email sent to ${email}`);
-            return { success: true };
-        } else {
-            console.error('[EMAIL ERROR]', data);
-            return { success: false, message: data.message };
-        }
-    } catch (err) {
-        console.error('[EMAIL ERROR]', err.message);
-        return { success: false, message: err.message };
-    }
+
+        req.on('error', (err) => {
+            console.error('[EMAIL ERROR]', err.message);
+            resolve({ success: false, message: err.message });
+        });
+
+        req.on('timeout', () => {
+            req.destroy();
+            console.error('[EMAIL ERROR] Request timed out');
+            resolve({ success: false, message: 'Connection timed out' });
+        });
+
+        req.write(payload);
+        req.end();
+    });
 }
 
 // Check if Resend is configured
