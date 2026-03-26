@@ -1027,9 +1027,11 @@ async function sendResetEmail(email, resetUrl) {
     
     console.log(`[EMAIL] Attempting to send reset email to: ${email}`);
     
-    return new Promise((resolve) => {
-        const https = require('https');
-        const payload = JSON.stringify({
+    try {
+        const { Resend } = require('resend');
+        const resend = new Resend(resendApiKey);
+
+        const { data, error } = await resend.emails.send({
             from: 'mcqlala <noreply@mcqlala.in>',
             to: [email],
             subject: 'mcqlala - Reset Your Password',
@@ -1045,49 +1047,17 @@ async function sendResetEmail(email, resetUrl) {
             `
         });
 
-        const options = {
-            hostname: 'api.resend.com',
-            port: 443,
-            path: '/emails',
-            method: 'POST',
-            family: 4, // Force IPv4
-            timeout: 15000,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${resendApiKey}`,
-                'Content-Length': Buffer.byteLength(payload)
-            }
-        };
+        if (error) {
+            console.error('[EMAIL ERROR]', JSON.stringify(error));
+            return { success: false, message: error.message };
+        }
 
-        const req = https.request(options, (res) => {
-            let data = '';
-            res.on('data', (chunk) => { data += chunk; });
-            res.on('end', () => {
-                console.log(`[EMAIL] Resend response status: ${res.statusCode}`);
-                console.log(`[EMAIL] Resend response: ${data}`);
-                if (res.statusCode === 200) {
-                    console.log(`[EMAIL SENT] Reset email sent to ${email}`);
-                    resolve({ success: true });
-                } else {
-                    resolve({ success: false, message: data });
-                }
-            });
-        });
-
-        req.on('error', (err) => {
-            console.error('[EMAIL ERROR]', err.message);
-            resolve({ success: false, message: err.message });
-        });
-
-        req.on('timeout', () => {
-            req.destroy();
-            console.error('[EMAIL ERROR] Request timed out');
-            resolve({ success: false, message: 'Connection timed out' });
-        });
-
-        req.write(payload);
-        req.end();
-    });
+        console.log(`[EMAIL SENT] Reset email sent to ${email}`, data);
+        return { success: true };
+    } catch (err) {
+        console.error('[EMAIL ERROR]', err.message);
+        return { success: false, message: err.message };
+    }
 }
 
 // Check if Resend is configured
