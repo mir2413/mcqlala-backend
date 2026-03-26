@@ -1,5 +1,5 @@
-// API Base URL - dynamically uses current domain
-const API_BASE_URL = window.location.origin + '/api';
+// API Base URL - points to Render backend
+const API_BASE_URL = 'https://mcqlala-backend-1.onrender.com/api';
 
 // Globally override fetch to strictly include credentials (JWT cookie)
 const originalFetch = window.fetch;
