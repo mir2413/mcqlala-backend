@@ -1,11 +1,42 @@
 // API Base URL - points to Render backend
 const API_BASE_URL = 'https://mcqlala-backend-1.onrender.com/api';
 
-// Globally override fetch to strictly include credentials (JWT cookie)
+// CSRF Token Management
+let csrfToken = null;
+
+async function getCSRFToken() {
+    if (csrfToken) return csrfToken;
+    try {
+        const response = await originalFetch(`${API_BASE_URL}/csrf-token`, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        csrfToken = data.csrfToken;
+        return csrfToken;
+    } catch (error) {
+        console.error('Failed to get CSRF token:', error);
+        return null;
+    }
+}
+
+// Globally override fetch to strictly include credentials (JWT cookie) and CSRF token
 const originalFetch = window.fetch;
-window.fetch = function(url, options = {}) {
+window.fetch = async function(url, options = {}) {
     // Send standard CORS cookies along with requests
     options.credentials = 'include';
+    
+    // Add CSRF token for state-changing requests
+    const method = options.method ? options.method.toUpperCase() : 'GET';
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+        const token = await getCSRFToken();
+        if (token) {
+            options.headers = {
+                ...options.headers,
+                'X-CSRF-Token': token
+            };
+        }
+    }
+    
     return originalFetch(url, options);
 };
 
