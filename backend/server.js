@@ -1030,8 +1030,8 @@ if (EMAIL_USER && EMAIL_PASS) {
         if (!err && addresses.length > 0) {
             emailTransporter = nodemailer.createTransport({
                 host: addresses[0],
-                port: 465,
-                secure: true,
+                port: 587,
+                secure: false, // false for 587 (STARTTLS)
                 auth: {
                     user: EMAIL_USER,
                     pass: EMAIL_PASS
