@@ -26,6 +26,7 @@
         }
 
         let allMCQs = [];
+        let currentMCQPage = 1;
         let siteStructure = {};
         let subjectIdMap = {};
         let editingId = null;
@@ -80,7 +81,11 @@
             loadUsers();
             loadMessages();
 
-            document.getElementById('searchMCQ').addEventListener('keyup', applyFilters);
+            let mcqSearchTimeout;
+            document.getElementById('searchMCQ').addEventListener('keyup', () => {
+                clearTimeout(mcqSearchTimeout);
+                mcqSearchTimeout = setTimeout(() => applyFilters(), 400);
+            });
             document.getElementById('filterCategory').addEventListener('change', loadTopicsForFilter);
             document.getElementById('filterTopic').addEventListener('change', applyFilters);
             document.getElementById('userSearchInput').addEventListener('keyup', () => loadUsers(1));
@@ -140,22 +145,36 @@
             }
         }
 
-        async function loadMCQs() {
+        async function loadMCQs(page = 1) {
             const mcqList = document.getElementById('mcqList');
             if (!mcqList) return;
             
             mcqList.innerHTML = '<p style="text-align: center; color: #999;">Loading questions...</p>';
             try {
-                const response = await fetch(`${API_BASE_URL}/mcqs/all`);
+                const searchTerm = document.getElementById('searchMCQ').value;
+                const categoryFilter = document.getElementById('filterCategory').value;
+                const topicFilter = document.getElementById('filterTopic').value;
+
+                const params = new URLSearchParams({
+                    page: page,
+                    limit: 20,
+                    search: searchTerm,
+                    category: categoryFilter,
+                    topic: topicFilter
+                });
+
+                const response = await fetch(`${API_BASE_URL}/mcqs/all?${params}`);
                 if (!response.ok) throw new Error('Failed to fetch MCQs');
                 const data = await response.json();
                 
-                if (!Array.isArray(data)) {
+                if (!data.mcqs || !Array.isArray(data.mcqs)) {
                     throw new Error('Invalid data format');
                 }
                 
-                allMCQs = data;
+                allMCQs = data.mcqs;
+                currentMCQPage = data.currentPage;
                 displayMCQs(allMCQs);
+                updateMCQPagination(data.currentPage, data.totalPages, data.total);
             } catch (error) {
                 console.error('Error loading MCQs:', error);
                 mcqList.innerHTML = '<li style="color: red;">Error loading questions</li>';
@@ -186,21 +205,15 @@
         }
 
         function applyFilters() {
-            const searchTerm = document.getElementById('searchMCQ').value.toLowerCase();
-            const categoryFilter = document.getElementById('filterCategory').value;
-            const topicFilter = document.getElementById('filterTopic').value;
+            loadMCQs(1);
+        }
 
-            const filtered = allMCQs.filter(mcq => {
-                const searchMatch = mcq.question.toLowerCase().includes(searchTerm) ||
-                                    mcq.category.toLowerCase().includes(searchTerm) ||
-                                    mcq.topic.toLowerCase().includes(searchTerm);
-                
-                const categoryMatch = !categoryFilter || mcq.category === categoryFilter;
-                const topicMatch = !topicFilter || mcq.topic === topicFilter;
-
-                return searchMatch && categoryMatch && topicMatch;
-            });
-            displayMCQs(filtered);
+        function updateMCQPagination(current, total, totalCount) {
+            document.getElementById('mcqPageInfo').textContent = `Page ${current} of ${total} (${totalCount} questions)`;
+            document.getElementById('prevMCQPage').disabled = current <= 1;
+            document.getElementById('prevMCQPage').onclick = () => loadMCQs(current - 1);
+            document.getElementById('nextMCQPage').disabled = current >= total;
+            document.getElementById('nextMCQPage').onclick = () => loadMCQs(current + 1);
         }
 
         function addOption() {

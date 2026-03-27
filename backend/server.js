@@ -629,12 +629,32 @@ app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, re
 
 // MCQ Routes
 app.get('/api/mcqs/all', async (req, res) => {
-    if (!isDbConnected) return res.json([]);
+    if (!isDbConnected) return res.json({ mcqs: [], currentPage: 1, totalPages: 0, total: 0 });
     try {
-        const mcqs = await MCQ.find();
-        res.json(mcqs);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const search = req.query.search || '';
+        const category = req.query.category || '';
+        const topic = req.query.topic || '';
+
+        let query = {};
+        if (search) {
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            query.$or = [
+                { question: { $regex: escapedSearch, $options: 'i' } },
+                { category: { $regex: escapedSearch, $options: 'i' } },
+                { topic: { $regex: escapedSearch, $options: 'i' } }
+            ];
+        }
+        if (category) query.category = category;
+        if (topic) query.topic = topic;
+
+        const total = await MCQ.countDocuments(query);
+        const mcqs = await MCQ.find(query).skip((page - 1) * limit).limit(limit);
+
+        res.json({ mcqs, currentPage: page, totalPages: Math.ceil(total / limit), total });
     } catch (err) {
-        res.json([]);
+        res.json({ mcqs: [], currentPage: 1, totalPages: 0, total: 0 });
     }
 });
 
