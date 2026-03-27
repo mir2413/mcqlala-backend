@@ -598,9 +598,20 @@ app.put('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, res) 
     try {
         const subject = await Subject.findById(req.params.subjectId);
         if (subject) {
-            const topic = subject.topics.id(req.params.topicId);
+            const topicId = req.params.topicId;
+            let topic = subject.topics.id(topicId);
+            // Fallback: find by name for topics stored as strings
+            if (!topic) {
+                topic = subject.topics.find(t => (typeof t === 'string' && t === topicId) || (t.name === topicId));
+            }
             if (topic) {
-                topic.name = req.body.name || topic.name;
+                if (typeof topic === 'string') {
+                    // Convert string topic to object
+                    const idx = subject.topics.indexOf(topic);
+                    subject.topics[idx] = { name: req.body.name || topic };
+                } else {
+                    topic.name = req.body.name || topic.name;
+                }
                 await subject.save();
                 res.json(topic);
             } else {
@@ -619,7 +630,12 @@ app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, re
     try {
         const subject = await Subject.findById(req.params.subjectId);
         if (!subject) return res.status(404).json({ message: 'Subject not found' });
-        subject.topics = subject.topics.filter(t => t._id.toString() !== req.params.topicId);
+        const topicId = req.params.topicId;
+        subject.topics = subject.topics.filter(t => {
+            // Handle both object topics (with _id) and plain string topics
+            if (typeof t === 'string') return t !== topicId;
+            return t._id && t._id.toString() !== topicId && t.name !== topicId;
+        });
         await subject.save();
         res.json({ message: 'Topic deleted' });
     } catch (err) {
