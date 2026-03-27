@@ -631,13 +631,17 @@ app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, re
         const subject = await Subject.findById(req.params.subjectId);
         if (!subject) return res.status(404).json({ message: 'Subject not found' });
         const topicId = req.params.topicId;
+        console.log('[DELETE TOPIC] subjectId:', req.params.subjectId, 'topicId:', topicId, 'total topics:', subject.topics.length);
+        console.log('[DELETE TOPIC] topics:', subject.topics.map(t => ({ _id: t._id?.toString(), name: t.name, type: typeof t })));
+        
+        const originalLength = subject.topics.length;
         subject.topics = subject.topics.filter(t => {
-            // Handle both object topics (with _id) and plain string topics
             if (typeof t === 'string') return t !== topicId;
             const matchesId = t._id && t._id.toString() === topicId;
             const matchesName = t.name === topicId;
             return !matchesId && !matchesName;
         });
+        console.log('[DELETE TOPIC] removed', originalLength - subject.topics.length, 'topics');
         await subject.save();
         res.json({ message: 'Topic deleted' });
     } catch (err) {
