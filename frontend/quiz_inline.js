@@ -21,6 +21,12 @@
             topic = params.get('topic') || 'General Knowledge';
             category = params.get('category') || 'General';
 
+            // Disable right-click on quiz questions
+            const questionsContainer = document.getElementById('questionsContainer');
+            if (questionsContainer) {
+                questionsContainer.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
             if (typeof loadNavLinks === 'function') {
                 loadNavLinks();
             }

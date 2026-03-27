@@ -2,6 +2,10 @@
         .quiz-questions-container {
             display: grid;
             gap: 25px;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
         .quiz-question {
@@ -10,6 +14,8 @@
             border-radius: 8px;
             border-left: 4px solid #3B82F6;
             page-break-inside: avoid;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .quiz-question h4 {
