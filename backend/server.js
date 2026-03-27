@@ -634,7 +634,9 @@ app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, re
         subject.topics = subject.topics.filter(t => {
             // Handle both object topics (with _id) and plain string topics
             if (typeof t === 'string') return t !== topicId;
-            return t._id && t._id.toString() !== topicId && t.name !== topicId;
+            const matchesId = t._id && t._id.toString() === topicId;
+            const matchesName = t.name === topicId;
+            return !matchesId && !matchesName;
         });
         await subject.save();
         res.json({ message: 'Topic deleted' });
