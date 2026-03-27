@@ -629,9 +629,19 @@ app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, re
 
 // MCQ Routes
 app.get('/api/mcqs/all', async (req, res) => {
-    if (!isDbConnected) return res.json({ mcqs: [], currentPage: 1, totalPages: 0, total: 0 });
+    if (!isDbConnected) {
+        if (req.query.page) return res.json({ mcqs: [], currentPage: 1, totalPages: 0, total: 0 });
+        return res.json([]);
+    }
     try {
-        const page = parseInt(req.query.page) || 1;
+        const page = parseInt(req.query.page);
+
+        // If no page param, return all MCQs (backward compatible)
+        if (!page) {
+            const mcqs = await MCQ.find();
+            return res.json(mcqs);
+        }
+
         const limit = parseInt(req.query.limit) || 20;
         const search = req.query.search || '';
         const category = req.query.category || '';
@@ -654,7 +664,8 @@ app.get('/api/mcqs/all', async (req, res) => {
 
         res.json({ mcqs, currentPage: page, totalPages: Math.ceil(total / limit), total });
     } catch (err) {
-        res.json({ mcqs: [], currentPage: 1, totalPages: 0, total: 0 });
+        if (req.query.page) return res.json({ mcqs: [], currentPage: 1, totalPages: 0, total: 0 });
+        res.json([]);
     }
 });
 

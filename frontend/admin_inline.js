@@ -151,16 +151,16 @@
             
             mcqList.innerHTML = '<p style="text-align: center; color: #999;">Loading questions...</p>';
             try {
-                const searchTerm = document.getElementById('searchMCQ').value;
-                const categoryFilter = document.getElementById('filterCategory').value;
-                const topicFilter = document.getElementById('filterTopic').value;
+                const searchEl = document.getElementById('searchMCQ');
+                const categoryEl = document.getElementById('filterCategory');
+                const topicEl = document.getElementById('filterTopic');
 
                 const params = new URLSearchParams({
                     page: page,
                     limit: 20,
-                    search: searchTerm,
-                    category: categoryFilter,
-                    topic: topicFilter
+                    search: searchEl ? searchEl.value : '',
+                    category: categoryEl ? categoryEl.value : '',
+                    topic: topicEl ? topicEl.value : ''
                 });
 
                 const response = await fetch(`${API_BASE_URL}/mcqs/all?${params}`);
