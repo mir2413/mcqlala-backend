@@ -1528,3 +1528,21 @@ const shutdown = () => {
 };
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
+
+// Self-ping to keep server awake on free hosting (Render, etc.)
+const SELF_PING_URL = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL;
+if (SELF_PING_URL && process.env.NODE_ENV === 'production') {
+    setInterval(async () => {
+        try {
+            await fetch(`${SELF_PING_URL}/api/health`);
+            console.log('[Keep-Alive] Ping successful');
+        } catch (err) {
+            console.log('[Keep-Alive] Ping failed:', err.message);
+        }
+    }, 14 * 60 * 1000); // Ping every 14 minutes (before Render's 15-min timeout)
+}
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
