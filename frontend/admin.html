@@ -137,6 +137,12 @@
                 <select id="filterCategory" name="filterCategory" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-width: 200px;"><option value="">All Categories</option></select>
                 <select id="filterTopic" name="filterTopic" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; min-width: 200px;"><option value="">All Topics</option></select>
             </div>
+            <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                <button data-onclick="deleteSelectedMCQs" class="delete-btn" style="padding: 8px 15px; font-size: 14px;"><i class="fa-solid fa-trash"></i> Delete Selected</button>
+                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; margin-left: 10px; font-size: 14px; color: #555;">
+                    <input type="checkbox" id="selectAllMCQs" name="selectAllMCQs" data-onchange="toggleSelectAllMCQs" data-args="[this]" style="width: 16px; height: 16px; cursor: pointer;"> Select All
+                </label>
+            </div>
             <ul class="mcq-list" id="mcqList">
                 <li style="text-align: center; color: #999; padding: 20px;">Loading questions...</li>
             </ul>

@@ -757,6 +757,23 @@ app.delete('/api/mcqs/:id', adminAuth, async (req, res) => {
     }
 });
 
+app.post('/api/mcqs/bulk-delete', adminAuth, async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ message: 'Invalid request' });
+        }
+        console.log(`[BULK DELETE MCQ] Attempting to delete ${ids.length} MCQs`);
+        const result = await MCQ.deleteMany({ _id: { $in: ids } });
+        console.log(`[BULK DELETE MCQ] Successfully deleted ${result.deletedCount} MCQs`);
+        res.json({ message: `${result.deletedCount} questions deleted`, deletedCount: result.deletedCount });
+    } catch (err) {
+        console.error(`[BULK DELETE MCQ] Error: ${err.message}`);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Seed Data Route (For Admin Panel - REMOVED FOR SECURITY)
 // This endpoint has been removed. Use the admin panel to add data instead.
 

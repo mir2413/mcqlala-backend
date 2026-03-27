@@ -190,8 +190,9 @@
             }
 
             mcqList.innerHTML = mcqs.map(mcq => `
-                <li class="mcq-item">
-                    <h4>${escapeHtml(mcq.question)}</h4>
+                <li class="mcq-item" style="position: relative;">
+                    <input type="checkbox" class="mcq-checkbox" value="${mcq._id}" style="position: absolute; top: 15px; left: 15px; width: 18px; height: 18px; cursor: pointer;">
+                    <h4 style="margin-left: 30px;">${escapeHtml(mcq.question)}</h4>
                     <p><strong>Category:</strong> ${escapeHtml(mcq.category)}</p>
                     <p><strong>Topic:</strong> ${escapeHtml(mcq.topic)}</p>
                     <p><strong>Difficulty:</strong> <span style="color: ${mcq.difficulty === 'easy' ? '#21cc12' : mcq.difficulty === 'medium' ? '#ff9800' : '#ff6b6b'}">${escapeHtml(mcq.difficulty)}</span></p>
@@ -349,6 +350,43 @@
                     loadStats();
                 } else {
                     showError('Failed to delete question');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+
+        function toggleSelectAllMCQs(checkbox) {
+            const mcqCheckboxes = document.querySelectorAll('.mcq-checkbox');
+            mcqCheckboxes.forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        async function deleteSelectedMCQs() {
+            const checkboxes = document.querySelectorAll('.mcq-checkbox:checked');
+            const ids = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (ids.length === 0) {
+                showError('Please select questions to delete.');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete ${ids.length} question(s)?`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/mcqs/bulk-delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showSuccess(`${result.deletedCount} question(s) deleted successfully!`);
+                    document.getElementById('selectAllMCQs').checked = false;
+                    loadMCQs();
+                    loadStats();
+                } else {
+                    showError('Failed to delete questions');
                 }
             } catch (error) {
                 showError('Error: ' + error.message);
