@@ -6,6 +6,10 @@
     <meta name="google-site-verification" content="Ws3ZqsiCYCyOi7sXdCWZb42wSZeenNbldKurhmjfZ3Q" />
     <meta name="description" content="MCQLala - Free online MCQ platform for UPSC, PSC, JKSSB, SSC and other competitive exams. Practice topic-wise MCQs and improve your knowledge.">
     <title>mcqlala - Online MCQ Platform</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://mcqlala-backend-1.onrender.com">
+    <link rel="dns-prefetch" href="https://mcqlala-backend-1.onrender.com">
     <link rel="stylesheet" href="style.css?v=1774346226095">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css?v=1774346226095" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" media="print" onload="this.media='all'">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -58,8 +62,11 @@
         </div>
 
         <div class="card-grid" id="cardGrid">            
-            <!-- Cards will be loaded dynamically from API -->
-            <div style="grid-column: 1/-1; text-align: center; padding: 20px; color: #666;">Loading subjects...</div>
+            <!-- Skeleton loading -->
+            <div class="card skeleton"><div class="skeleton-box"></div></div>
+            <div class="card skeleton"><div class="skeleton-box"></div></div>
+            <div class="card skeleton"><div class="skeleton-box"></div></div>
+            <div class="card skeleton"><div class="skeleton-box"></div></div>
         </div>
 
     </div>

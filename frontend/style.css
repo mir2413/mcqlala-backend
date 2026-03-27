@@ -1312,3 +1312,22 @@ body {
         padding: 10px 8px !important;
     }
 }
+
+/* Skeleton loading animation */
+.skeleton {
+    animation: skeleton-loading 1s linear infinite alternate;
+    opacity: 0.7;
+}
+
+.skeleton-box {
+    height: 80px;
+    background: linear-gradient(90deg, var(--border) 25%, var(--bg-card) 50%, var(--border) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
