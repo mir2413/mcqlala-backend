@@ -1468,6 +1468,11 @@ app.get('/api/backup/download/:filename', adminAuth, (req, res) => {
     }
 });
 
+// Health check endpoint (must be before wildcard)
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Fallback to index.html for any other requests (useful for SPA, though this is a multi-page site)
 app.get('*', (req, res) => {
     const frontendDir = path.join(__dirname, '..', 'frontend');
