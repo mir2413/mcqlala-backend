@@ -1,5 +1,5 @@
-// API Base URL - points to Render backend
-const API_BASE_URL = 'https://mcqlala-backend-1.onrender.com/api';
+// API Base URL - uses relative path (Vercel proxies to backend)
+const API_BASE_URL = '/api';
 
 // CSRF Token Management
 let csrfToken = null;
