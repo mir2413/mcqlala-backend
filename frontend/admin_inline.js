@@ -795,18 +795,25 @@
 
         async function deleteTopic(subjectId, topicId) {
             if (!confirm('Delete this topic?')) return;
-            console.log('Deleting topic:', subjectId, topicId);
+            const user = getCurrentUser();
+            if (!user || !user.userId) {
+                showError('Please login again - session expired');
+                setTimeout(() => window.location.href = 'login.html', 2000);
+                return;
+            }
+            console.log('Deleting topic:', subjectId, topicId, 'user:', user.userId);
             try {
                 const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${topicId}`, { 
                     method: 'DELETE'
                 });
                 console.log('Delete response:', response.status, response.statusText);
+                const text = await response.text();
+                console.log('Response body:', text);
                 if (response.ok) {
                     showSuccess('Topic deleted');
                     loadSubjects();
                 } else {
-                    const data = await response.json().catch(() => ({}));
-                    showError(data.message || 'Failed to delete topic');
+                    showError('Failed to delete topic: ' + text);
                 }
             } catch (e) { 
                 console.error('Delete error:', e);
