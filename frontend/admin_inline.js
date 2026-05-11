@@ -144,17 +144,17 @@
                         <h3>${new Set(mcqs.map(m => m.topic)).size || 0}</h3>
                         <p>Topics</p>
                     </div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                        <h3>${visitorStats.total || 0}</h3>
-                        <p>Total Visitors</p>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <h3 style="font-size: 2.5rem; font-weight: 800; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">${visitorStats.total || 0}</h3>
+                        <p style="font-size: 1rem; font-weight: 600; margin: 5px 0 0 0; opacity: 0.9;">Total Visitors</p>
                     </div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
-                        <h3>${visitorStats.today || 0}</h3>
-                        <p>Today's Visitors</p>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <h3 style="font-size: 2.5rem; font-weight: 800; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">${visitorStats.today || 0}</h3>
+                        <p style="font-size: 1rem; font-weight: 600; margin: 5px 0 0 0; opacity: 0.9;">Today's Visitors</p>
                     </div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
-                        <h3>${visitorStats.week || 0}</h3>
-                        <p>This Week</p>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <h3 style="font-size: 2.5rem; font-weight: 800; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">${visitorStats.week || 0}</h3>
+                        <p style="font-size: 1rem; font-weight: 600; margin: 5px 0 0 0; opacity: 0.9;">This Week</p>
                     </div>
                 `;
                 document.getElementById('statsGrid').innerHTML = statsHtml;
