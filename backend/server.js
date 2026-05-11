@@ -598,11 +598,11 @@ app.put('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, res) 
     try {
         const subject = await Subject.findById(req.params.subjectId);
         if (subject) {
-            const topicId = req.params.topicId;
+            const topicId = req.params.topicId.trim();
             let topic = subject.topics.id(topicId);
             // Fallback: find by name for topics stored as strings
             if (!topic) {
-                topic = subject.topics.find(t => (typeof t === 'string' && t === topicId) || (t.name === topicId));
+                topic = subject.topics.find(t => (typeof t === 'string' && t.trim() === topicId) || (t.name && t.name.trim() === topicId));
             }
             if (topic) {
                 if (typeof topic === 'string') {
@@ -630,15 +630,15 @@ app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, re
     try {
         const subject = await Subject.findById(req.params.subjectId);
         if (!subject) return res.status(404).json({ message: 'Subject not found' });
-        const topicId = req.params.topicId;
+        const topicId = req.params.topicId.trim();
         console.log('[DELETE TOPIC] subjectId:', req.params.subjectId, 'topicId:', topicId, 'total topics:', subject.topics.length);
         console.log('[DELETE TOPIC] topics:', subject.topics.map(t => ({ _id: t._id?.toString(), name: t.name, type: typeof t })));
         
         const originalLength = subject.topics.length;
         subject.topics = subject.topics.filter(t => {
-            if (typeof t === 'string') return t !== topicId;
+            if (typeof t === 'string') return t.trim() !== topicId;
             const matchesId = t._id && t._id.toString() === topicId;
-            const matchesName = t.name === topicId;
+            const matchesName = t.name && t.name.trim() === topicId;
             return !matchesId && !matchesName;
         });
         console.log('[DELETE TOPIC] removed', originalLength - subject.topics.length, 'topics');

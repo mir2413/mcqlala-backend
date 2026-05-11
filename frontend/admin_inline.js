@@ -803,7 +803,7 @@
             }
             console.log('Deleting topic:', subjectId, topicId, 'user:', user.userId);
             try {
-                const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${encodeURIComponent(topicId.trim())}`, { 
+                const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${encodeURIComponent(topicId)}`, { 
                     method: 'DELETE'
                 });
                 console.log('Delete response:', response.status, response.statusText);
@@ -841,7 +841,7 @@
             if (!name) return;
 
             try {
-                const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${encodeURIComponent(topicId.trim())}`, {
+                const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${encodeURIComponent(topicId)}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name })
