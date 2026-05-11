@@ -77,6 +77,20 @@ body {
     color: var(--text-muted);
 }
 
+.brand-tagline {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+    letter-spacing: 0.5px;
+}
+
+.footer-col ul li a,
+.footer-col ul li span {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
 .nav-links {
     display: flex;
     list-style: none;
@@ -285,6 +299,15 @@ body {
 
 .footer-col ul li:hover {
     color: var(--primary);
+}
+
+.footer-col ul li a:hover {
+    color: var(--primary);
+}
+
+.footer-col ul li a {
+    text-decoration: none;
+    color: inherit;
 }
 
 /* Contact Form in Footer */
