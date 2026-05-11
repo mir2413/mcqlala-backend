@@ -125,6 +125,12 @@
                 const response = await fetch(`${API_BASE_URL}/mcqs-category/all`);
                 const mcqs = await response.json();
                 
+                let visitorStats = { total: 0, today: 0, week: 0, month: 0 };
+                try {
+                    const visitorRes = await fetch(`${API_BASE_URL}/visitors/stats`);
+                    visitorStats = await visitorRes.json();
+                } catch(e) { /* visitor stats optional */ }
+                
                 const statsHtml = `
                     <div class="stat-card">
                         <h3>${mcqs.length || 0}</h3>
@@ -137,6 +143,18 @@
                     <div class="stat-card">
                         <h3>${new Set(mcqs.map(m => m.topic)).size || 0}</h3>
                         <p>Topics</p>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <h3>${visitorStats.total || 0}</h3>
+                        <p>Total Visitors</p>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                        <h3>${visitorStats.today || 0}</h3>
+                        <p>Today's Visitors</p>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                        <h3>${visitorStats.week || 0}</h3>
+                        <p>This Week</p>
                     </div>
                 `;
                 document.getElementById('statsGrid').innerHTML = statsHtml;

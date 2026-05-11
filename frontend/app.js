@@ -40,6 +40,17 @@ window.fetch = async function(url, options = {}) {
     return originalFetch(url, options);
 };
 
+// Track visitor on page load
+(function() {
+    if (!window.location.pathname.includes('admin.html')) {
+        fetch(`${API_BASE_URL}/visitors/track`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: window.location.pathname })
+        }).catch(() => {});
+    }
+})();
+
 // Session Management
 function isLoggedIn() {
     return localStorage.getItem('userId') !== null;
