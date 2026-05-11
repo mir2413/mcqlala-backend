@@ -795,14 +795,23 @@
 
         async function deleteTopic(subjectId, topicId) {
             if (!confirm('Delete this topic?')) return;
-            const user = getCurrentUser();
+            console.log('Deleting topic:', subjectId, topicId);
             try {
-                await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${topicId}`, { 
-                    method: 'DELETE',
-                    headers: { 'X-User-ID': user.userId }
+                const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${topicId}`, { 
+                    method: 'DELETE'
                 });
-                loadSubjects();
-            } catch (e) { showError(e.message); }
+                console.log('Delete response:', response.status, response.statusText);
+                if (response.ok) {
+                    showSuccess('Topic deleted');
+                    loadSubjects();
+                } else {
+                    const data = await response.json().catch(() => ({}));
+                    showError(data.message || 'Failed to delete topic');
+                }
+            } catch (e) { 
+                console.error('Delete error:', e);
+                showError(e.message); 
+            }
         }
 
         function enableEditTopic(subjectId, topicId) {
@@ -823,16 +832,16 @@
             const input = document.getElementById(`edit-topic-input-${topicId}`);
             const name = input.value;
             if (!name) return;
-            const user = getCurrentUser();
 
             try {
                 const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${topicId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name })
                 });
                 
                 if (response.ok) {
+                    showSuccess('Topic updated');
                     loadSubjects();
                 } else {
                     const data = await response.json();
