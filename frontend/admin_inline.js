@@ -975,10 +975,11 @@
 
         async function promoteUser(email) {
             if(!confirm(`Are you sure you want to promote ${email} to Admin?`)) return;
+            const user = getCurrentUser();
             try {
                 const response = await fetch(`${API_BASE_URL}/users/promote`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId },
                     body: JSON.stringify({ email })
                 });
                 if(response.ok) {
@@ -1097,14 +1098,13 @@
         async function changeAdminPassword() {
             const newPassword = document.getElementById('newAdminPassword').value;
             if (!newPassword) return alert('Please enter a new password');
-            
-            const userId = localStorage.getItem('userId');
+            const user = getCurrentUser();
             
             try {
                 const response = await fetch(`${API_BASE_URL}/users/change-password`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, newPassword })
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId },
+                    body: JSON.stringify({ userId: user.userId, newPassword })
                 });
                 
                 const data = await response.json();
