@@ -811,7 +811,7 @@
                 console.log('Response body:', text);
                 if (response.ok) {
                     showSuccess('Topic deleted');
-                    loadSubjects();
+                    setTimeout(() => loadSubjects(), 100);
                 } else {
                     showError('Failed to delete topic: ' + text);
                 }
