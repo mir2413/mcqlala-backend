@@ -784,8 +784,12 @@
 
         async function deleteTopic(subjectId, topicId) {
             if (!confirm('Delete this topic?')) return;
+            const user = getCurrentUser();
             try {
-                await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${topicId}`, { method: 'DELETE' });
+                await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${topicId}`, { 
+                    method: 'DELETE',
+                    headers: { 'X-User-ID': user.userId }
+                });
                 loadSubjects();
             } catch (e) { showError(e.message); }
         }
@@ -808,11 +812,12 @@
             const input = document.getElementById(`edit-topic-input-${topicId}`);
             const name = input.value;
             if (!name) return;
+            const user = getCurrentUser();
 
             try {
                 const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${topicId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId },
                     body: JSON.stringify({ name })
                 });
                 
