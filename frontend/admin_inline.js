@@ -692,6 +692,7 @@
             const name = document.getElementById('newSubjectName').value;
             const description = document.getElementById('newSubjectDesc').value;
             if (!name) return alert('Subject name is required');
+            const user = getCurrentUser();
 
             const url = editingSubjectId ? `${API_BASE_URL}/subjects/${editingSubjectId}` : `${API_BASE_URL}/subjects`;
             const method = editingSubjectId ? 'PUT' : 'POST';
@@ -699,7 +700,7 @@
             try {
                 const response = await fetch(url, {
                     method: method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId },
                     body: JSON.stringify({ name, description })
                 });
                 if (response.ok) {
@@ -760,8 +761,12 @@
 
         async function deleteSubject(id) {
             if (!confirm('Delete this subject and all its topics?')) return;
+            const user = getCurrentUser();
             try {
-                await fetch(`${API_BASE_URL}/subjects/${id}`, { method: 'DELETE' });
+                await fetch(`${API_BASE_URL}/subjects/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'X-User-ID': user.userId }
+                });
                 loadSubjects();
             } catch (e) { showError(e.message); }
         }
@@ -770,11 +775,12 @@
             const input = document.getElementById(`topic-input-${subjectId}`);
             const name = input.value;
             if (!name) return;
+            const user = getCurrentUser();
 
             try {
                 await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId },
                     body: JSON.stringify({ name })
                 });
                 input.value = '';
@@ -903,7 +909,11 @@
 
         async function deleteNavItem(id) {
             if (!confirm('Delete this navigation link?')) return;
-            const response = await fetch(`${API_BASE_URL}/navitems/${id}`, { method: 'DELETE' });
+            const user = getCurrentUser();
+            const response = await fetch(`${API_BASE_URL}/navitems/${id}`, { 
+                method: 'DELETE',
+                headers: { 'X-User-ID': user.userId }
+            });
             if (response.ok) { showSuccess('Link deleted.'); loadNavItems(); } else { showError('Failed to delete link.'); }
         }
 
@@ -1024,13 +1034,21 @@
         }
 
         async function markAsRead(id) {
-            await fetch(`${API_BASE_URL}/contact/${id}/read`, { method: 'PUT' });
+            const user = getCurrentUser();
+            await fetch(`${API_BASE_URL}/contact/${id}/read`, { 
+                method: 'PUT',
+                headers: { 'X-User-ID': user.userId }
+            });
             loadMessages();
         }
 
         async function deleteMessage(id) {
             if(!confirm('Delete this message?')) return;
-            await fetch(`${API_BASE_URL}/contact/${id}`, { method: 'DELETE' });
+            const user = getCurrentUser();
+            await fetch(`${API_BASE_URL}/contact/${id}`, { 
+                method: 'DELETE',
+                headers: { 'X-User-ID': user.userId }
+            });
             loadMessages();
         }
 
@@ -1042,6 +1060,7 @@
         async function deleteSelectedMessages() {
             const checkboxes = document.querySelectorAll('.message-checkbox:checked');
             const ids = Array.from(checkboxes).map(cb => cb.value);
+            const user = getCurrentUser();
             
             if (ids.length === 0) {
                 alert('Please select messages to delete.');
@@ -1053,7 +1072,7 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/contact/bulk-delete`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId },
                     body: JSON.stringify({ ids })
                 });
 
@@ -1122,8 +1141,12 @@
 
         async function deletePdf(id) {
             if (!confirm('Delete this PDF?')) return;
+            const user = getCurrentUser();
             try {
-                const response = await fetch(`${API_BASE_URL}/pdfs/${id}`, { method: 'DELETE' });
+                const response = await fetch(`${API_BASE_URL}/pdfs/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'X-User-ID': user.userId }
+                });
                 if (response.ok) {
                     showSuccess('PDF deleted');
                     loadPdfs();
