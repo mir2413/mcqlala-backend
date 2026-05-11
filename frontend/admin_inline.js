@@ -311,11 +311,12 @@
                 window.location.href = 'login.html';
                 return;
             }
+            const user = getCurrentUser();
 
             try {
                 const response = await fetch(`${API_BASE_URL}/mcqs`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId },
                     body: JSON.stringify(mcqData)
                 });
 
@@ -338,10 +339,12 @@
 
         async function confirmDeleteMCQ(id) {
             if (!confirm('Are you sure you want to delete this question?')) return;
+            const user = getCurrentUser();
 
             try {
                 const response = await fetch(`${API_BASE_URL}/mcqs/${id}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: { 'X-User-ID': user.userId }
                 });
 
                 if (response.ok) {
@@ -371,11 +374,12 @@
             }
 
             if (!confirm(`Are you sure you want to delete ${ids.length} question(s)?`)) return;
+            const user = getCurrentUser();
 
             try {
                 const response = await fetch(`${API_BASE_URL}/mcqs/bulk-delete`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId },
                     body: JSON.stringify({ ids })
                 });
 
@@ -573,6 +577,7 @@
                     
                     let successCount = 0;
                     let failCount = 0;
+                    const user = getCurrentUser();
 
                     for (let i = 0; i < total; i++) {
                         const row = data[i];
@@ -599,7 +604,7 @@
                             // API Call
                             const response = await fetch(`${API_BASE_URL}/mcqs`, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId },
                                 body: JSON.stringify(mcqData)
                             });
 
@@ -901,9 +906,10 @@
                 order: Number(document.getElementById('navItemOrder').value) || 0
             };
             if (!data.text || !data.icon || !data.link) return showError('Text, Icon, and Link are required.');
+            const user = getCurrentUser();
             const method = id ? 'PUT' : 'POST';
             const url = id ? `${API_BASE_URL}/navitems/${id}` : `${API_BASE_URL}/navitems`;
-            const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId }, body: JSON.stringify(data) });
             if (response.ok) { showSuccess(`Link ${id ? 'updated' : 'added'}.`); resetNavForm(); loadNavItems(); } else { showError(`Failed to ${id ? 'update' : 'add'} link.`); }
         }
 
@@ -1175,6 +1181,7 @@
             
             const formData = new FormData();
             formData.append('pdf', file);
+            const user = getCurrentUser();
             
             const submitBtn = document.querySelector('#uploadPdfForm .btn-primary');
             if (submitBtn) {
@@ -1185,6 +1192,7 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/pdfs`, {
                     method: 'POST',
+                    headers: { 'X-User-ID': user.userId },
                     body: formData
                 });
                 
