@@ -62,6 +62,10 @@
                         displayPage();
                         updatePageJumpSelection();
                         scrollToTopWithEffect();
+                        
+                        // Reset dropdown to default after selection to prevent arrow key issues
+                        this.blur();
+                        this.value = '';
                     }
                 });
             }
