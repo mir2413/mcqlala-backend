@@ -40,6 +40,7 @@
             await loadQuestions();
             if (quizData.length > 0) {
                 displayPage();
+                populatePageJump();
                 
                 // Attach Event Listeners
                 document.getElementById('prevBtn').addEventListener('click', previousPage);
@@ -49,6 +50,16 @@
                         submitQuiz();
                     } else {
                         nextPage();
+                    }
+                });
+                
+                // Page jump dropdown
+                document.getElementById('pageJump').addEventListener('change', function() {
+                    const page = parseInt(this.value);
+                    if (page >= 1 && page <= Math.ceil(quizData.length / questionsPerPage)) {
+                        currentPage = page;
+                        displayPage();
+                        updatePageJumpSelection();
                     }
                 });
             }
@@ -196,18 +207,17 @@
         function showSaveIndicator() {
             const saveDiv = document.getElementById('saveProgress');
             saveDiv.style.display = 'block';
-            setTimeout(() => {
+setTimeout(() => {
                 saveDiv.style.display = 'none';
             }, 2000);
         }
-
-
 
         function nextPage() {
             const totalPages = Math.ceil(quizData.length / questionsPerPage);
             if (currentPage < totalPages && totalPages > 0) {
                 currentPage++;
                 displayPage();
+                updatePageJumpSelection();
                 window.scrollTo(0, 0);
             }
         }
@@ -216,10 +226,34 @@
             if (currentPage > 1) {
                 currentPage--;
                 displayPage();
+                updatePageJumpSelection();
                 window.scrollTo(0, 0);
             }
         }
 
+        function populatePageJump() {
+            const pageJumpSelect = document.getElementById('pageJump');
+            const totalPages = Math.ceil(quizData.length / questionsPerPage);
+            
+            // Clear existing options except first
+            pageJumpSelect.innerHTML = '<option value="">Go to page</option>';
+            
+            // Add page options
+            for (let i = 1; i <= totalPages; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Page ${i}`;
+                pageJumpSelect.appendChild(option);
+            }
+        }
+        
+        function updatePageJumpSelection() {
+            const pageJumpSelect = document.getElementById('pageJump');
+            if (pageJumpSelect) {
+                pageJumpSelect.value = currentPage;
+            }
+        }
+        
         async function submitQuiz() {
             // Check for unanswered questions
             // Removed confirmation to allow users to finish partial quizzes (Practice Mode)
