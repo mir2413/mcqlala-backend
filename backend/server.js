@@ -396,6 +396,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Input Sanitization Middleware - Prevents XSS attacks by sanitizing user input
+// Only sanitize body data, not query parameters (they're used for filtering)
 const sanitizeInput = (req, res, next) => {
     const sanitize = (obj) => {
         if (typeof obj !== 'object' || obj === null) return obj;
@@ -418,11 +419,9 @@ const sanitizeInput = (req, res, next) => {
         return obj;
     };
 
+    // Only sanitize request body (not query params used for filtering)
     if (req.body && typeof req.body === 'object') {
         req.body = sanitize(req.body);
-    }
-    if (req.query && typeof req.query === 'object') {
-        req.query = sanitize(req.query);
     }
     next();
 };
@@ -736,6 +735,20 @@ app.get('/api/mcqs-category/all', async (req, res) => {
         res.json(mcqs);
     } catch (err) {
         res.json([]);
+    }
+});
+
+// Debug endpoint - Get MCQ count by topic
+app.get('/api/mcqs/stats', async (req, res) => {
+    if (!isDbConnected) return res.json({ error: 'Database not connected' });
+    try {
+        const stats = await MCQ.aggregate([
+            { $group: { _id: { topic: '$topic', category: '$category' }, count: { $sum: 1 } } },
+            { $sort: { '_id.category': 1, '_id.topic': 1 } }
+        ]);
+        res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
