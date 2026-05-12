@@ -1274,7 +1274,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'light') {
             document.body.classList.add('light-mode');
-            themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
+            themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i> <span class="theme-label">Light</span>';
         }
         
         // Toggle theme on click
@@ -1282,7 +1282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.toggle('light-mode');
             const isLight = document.body.classList.contains('light-mode');
             localStorage.setItem('theme', isLight ? 'light' : 'dark');
-            themeToggle.innerHTML = isLight ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+            themeToggle.innerHTML = isLight ? '<i class="fa-solid fa-sun"></i> <span class="theme-label">Light</span>' : '<i class="fa-solid fa-moon"></i> <span class="theme-label">Dark</span>';
         });
     }
 });
