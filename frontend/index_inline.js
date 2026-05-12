@@ -95,7 +95,7 @@
                 return subjects;
             } catch (error) {
                 console.error('Error loading subjects:', error);
-                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: red;">Failed to load subjects. Please check API connection.<br><small>${error.message}</small></div>`;
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: red;">Failed to load subjects. Please check API connection.</div>`;
                 return [];
             }
         }

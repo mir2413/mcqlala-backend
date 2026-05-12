@@ -9,6 +9,21 @@
     --text: #E5E7EB;
     --text-muted: #94A3B8;
     --border: #334155;
+    --shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* Light Mode */
+body.light-mode {
+    --bg-primary: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --primary: #3B82F6;
+    --primary-hover: #2563EB;
+    --correct: #22C55E;
+    --wrong: #EF4444;
+    --text: #1E293B;
+    --text-muted: #64748B;
+    --border: #E2E8F0;
+    --shadow: rgba(0, 0, 0, 0.1);
 }
 
 /* --- GLOBAL RESETS --- */
@@ -35,6 +50,38 @@
 body {
     background-color: var(--bg-primary);
     color: var(--text);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    margin-right: 15px;
+}
+
+.theme-toggle:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+body.light-mode .theme-toggle {
+    background-color: #f1f5f9;
+}
+
+body.light-mode .theme-toggle:hover {
+    background-color: var(--primary);
+    color: white;
 }
 
 /* --- 1. NAVBAR SECTION --- */

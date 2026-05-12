@@ -707,7 +707,7 @@
                 `).join('');
             } catch (error) {
                 console.error('Error loading subjects:', error);
-                container.innerHTML = `<p style="text-align: center; color: red;">Could not load subjects: ${error.message}</p>`;
+                container.innerHTML = `<p style="text-align: center; color: red;">Could not load subjects. Please try again.</p>`;
             }
         }
 
