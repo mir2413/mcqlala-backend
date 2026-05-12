@@ -56,10 +56,12 @@
                 // Page jump dropdown
                 document.getElementById('pageJump').addEventListener('change', function() {
                     const page = parseInt(this.value);
-                    if (page >= 1 && page <= Math.ceil(quizData.length / questionsPerPage)) {
+                    const totalPages = Math.ceil(quizData.length / questionsPerPage);
+                    if (page >= 1 && page <= totalPages) {
                         currentPage = page;
                         displayPage();
                         updatePageJumpSelection();
+                        scrollToTopWithEffect();
                     }
                 });
             }
@@ -218,7 +220,7 @@ setTimeout(() => {
                 currentPage++;
                 displayPage();
                 updatePageJumpSelection();
-                window.scrollTo(0, 0);
+                scrollToTopWithEffect();
             }
         }
 
@@ -227,7 +229,31 @@ setTimeout(() => {
                 currentPage--;
                 displayPage();
                 updatePageJumpSelection();
-                window.scrollTo(0, 0);
+                scrollToTopWithEffect();
+            }
+        }
+        
+        function scrollToTopWithEffect() {
+            const container = document.getElementById('questionsContainer');
+            
+            // Add flash effect
+            container.style.transition = 'opacity 0.15s ease-out';
+            container.style.opacity = '0.3';
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            setTimeout(() => {
+                container.style.opacity = '1';
+            }, 150);
+            
+            // Flash the page indicator
+            const pageIndicator = document.getElementById('pageIndicator');
+            if (pageIndicator) {
+                pageIndicator.style.transition = 'transform 0.2s ease';
+                pageIndicator.style.transform = 'scale(1.3)';
+                setTimeout(() => {
+                    pageIndicator.style.transform = 'scale(1)';
+                }, 200);
             }
         }
 
