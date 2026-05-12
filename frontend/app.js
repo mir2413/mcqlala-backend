@@ -1,6 +1,14 @@
 // API Base URL - uses relative path (Vercel proxies to backend)
 const API_BASE_URL = '/api';
 
+// XSS Protection - Sanitize user input before inserting into HTML
+function sanitizeHTML(str) {
+    if (typeof str !== 'string') return str;
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // CSRF Token Management
 let csrfToken = null;
 
@@ -354,8 +362,8 @@ window.loadProfileStats = async function() {
         const tbody = document.getElementById('quizHistoryBody');
         tbody.innerHTML = scores.map(s => `
             <tr>
-                <td>${s.topic || 'General'}</td>
-                <td>${new Date(s.submittedAt).toLocaleDateString()}</td>
+                <td>${sanitizeHTML(s.topic || 'General')}</td>
+                <td>${sanitizeHTML(new Date(s.submittedAt).toLocaleDateString())}</td>
                 <td><span style="font-weight:bold; color: ${s.percentage >= 50 ? '#21cc12' : '#ff6b6b'}">${s.percentage.toFixed(0)}%</span></td>
             </tr>
         `).join('') || '<tr><td colspan="3">No quizzes taken yet.</td></tr>';

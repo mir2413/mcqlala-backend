@@ -978,8 +978,8 @@
 
                 tbody.innerHTML = users.map(user => `
                     <tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 12px;">${user.username}</td>
-                        <td style="padding: 12px;">${user.email}</td>
+                        <td style="padding: 12px;">${escapeHtml(user.username)}</td>
+                        <td style="padding: 12px;">${escapeHtml(user.email)}</td>
                         <td style="padding: 12px;">
                             <span style="background: ${user.isAdmin ? '#d4edda' : '#e2e3e5'}; color: ${user.isAdmin ? '#155724' : '#383d41'}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
                                 ${user.isAdmin ? 'Admin' : 'User'}
@@ -987,7 +987,7 @@
                         </td>
                         <td style="padding: 12px;">${new Date(user.createdAt).toLocaleDateString()}</td>
                         <td style="padding: 12px;">
-                            ${!user.isAdmin ? `<button data-onclick="promoteUser" data-args="['${user.email}']" class="btn-secondary" style="padding: 5px 10px; font-size: 12px;">Promote</button>` : ''}
+                            ${!user.isAdmin ? `<button data-onclick="promoteUser" data-args="['${escapeHtml(user.email)}']" class="btn-secondary" style="padding: 5px 10px; font-size: 12px;">Promote</button>` : ''}
                         </td>
                     </tr>
                 `).join('');

@@ -395,6 +395,39 @@ app.use(express.static(frontendPath));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
+// Input Sanitization Middleware - Prevents XSS attacks by sanitizing user input
+const sanitizeInput = (req, res, next) => {
+    const sanitize = (obj) => {
+        if (typeof obj !== 'object' || obj === null) return obj;
+        
+        for (const key in obj) {
+            if (typeof obj[key] === 'string') {
+                // Remove HTML tags and encode special characters
+                obj[key] = obj[key]
+                    .replace(/<[^>]*>/g, '') // Remove HTML tags
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#x27;')
+                    .trim();
+            } else if (typeof obj[key] === 'object') {
+                sanitize(obj[key]);
+            }
+        }
+        return obj;
+    };
+
+    if (req.body && typeof req.body === 'object') {
+        req.body = sanitize(req.body);
+    }
+    if (req.query && typeof req.query === 'object') {
+        req.query = sanitize(req.query);
+    }
+    next();
+};
+app.use(sanitizeInput);
+
 // Multer for file uploads (memory storage for MongoDB)
 const multer = require('multer');
 const storage = multer.memoryStorage();
@@ -639,9 +672,6 @@ app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, re
         const subject = await Subject.findById(req.params.subjectId);
         if (!subject) return res.status(404).json({ message: 'Subject not found' });
         const topicId = req.params.topicId.trim();
-        console.log('[DELETE TOPIC] subjectId:', req.params.subjectId, 'topicId:', topicId, 'total topics:', subject.topics.length);
-        console.log('[DELETE TOPIC] topics:', subject.topics.map(t => ({ _id: t._id?.toString(), name: t.name, type: typeof t })));
-        
         const originalLength = subject.topics.length;
         subject.topics = subject.topics.filter(t => {
             if (typeof t === 'string') return t.trim() !== topicId;
@@ -649,7 +679,6 @@ app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, re
             const matchesName = t.name && t.name.trim() === topicId;
             return !matchesId && !matchesName;
         });
-        console.log('[DELETE TOPIC] removed', originalLength - subject.topics.length, 'topics');
         await subject.save();
         res.json({ message: 'Topic deleted' });
     } catch (err) {
@@ -717,12 +746,10 @@ app.get('/api/mcqs', async (req, res) => {
     }
     try {
         const { topic, category } = req.query;
-        console.log(`[API] Fetching MCQs for Topic: "${topic}", Category: "${category}"`);
         let query = {};
         if (category) query.category = category;
         if (topic) query.topic = topic;
         const results = await MCQ.find(query);
-        console.log(`[API] Found ${results.length} questions.`);
         res.json(results);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -735,7 +762,6 @@ app.post('/api/mcqs', adminAuth, async (req, res) => {
     }
     try {
         const newMcq = await MCQ.create(req.body);
-        console.log(`[MCQ Added] Topic: ${newMcq.topic}, Question: ${newMcq.question}`);
         res.json(newMcq);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -748,19 +774,14 @@ app.delete('/api/mcqs/:id', adminAuth, async (req, res) => {
     }
     try {
         const mcqId = req.params.id;
-        console.log(`[DELETE MCQ] Attempting to delete MCQ with ID: ${mcqId}`);
-        
         const result = await MCQ.findByIdAndDelete(mcqId);
         
         if (!result) {
-            console.log(`[DELETE MCQ] MCQ not found with ID: ${mcqId}`);
             return res.status(404).json({ message: 'MCQ not found' });
         }
         
-        console.log(`[DELETE MCQ] Successfully deleted MCQ: ${result._id}`);
         res.json({ message: 'Deleted successfully' });
     } catch (err) {
-        console.error(`[DELETE MCQ] Error: ${err.message}`);
         res.status(500).json({ error: err.message });
     }
 });
@@ -772,12 +793,9 @@ app.post('/api/mcqs/bulk-delete', adminAuth, async (req, res) => {
         if (!Array.isArray(ids) || ids.length === 0) {
             return res.status(400).json({ message: 'Invalid request' });
         }
-        console.log(`[BULK DELETE MCQ] Attempting to delete ${ids.length} MCQs`);
         const result = await MCQ.deleteMany({ _id: { $in: ids } });
-        console.log(`[BULK DELETE MCQ] Successfully deleted ${result.deletedCount} MCQs`);
         res.json({ message: `${result.deletedCount} questions deleted`, deletedCount: result.deletedCount });
     } catch (err) {
-        console.error(`[BULK DELETE MCQ] Error: ${err.message}`);
         res.status(500).json({ error: err.message });
     }
 });
@@ -1117,7 +1135,8 @@ app.post('/api/users/register', loginLimiter, async (req, res) => {
         return res.status(400).json({ message: 'Username must be 3-50 characters.' });
     }
     
-    if (email.length > 254 || !email.includes('@')) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email.length > 254 || !emailRegex.test(email)) {
         return res.status(400).json({ message: 'Invalid email format.' });
     }
     
@@ -1261,11 +1280,8 @@ if (EMAIL_USER && EMAIL_PASS) {
 
 async function sendResetEmail(email, resetUrl) {
     if (!emailTransporter || !emailServiceReady) {
-        console.log(`[DEV] Reset link for ${email}: ${resetUrl}`);
         return { success: false, message: 'Reset link logged to console' };
     }
-    
-    console.log(`[EMAIL] Attempting to send reset email to: ${email}`);
     
     try {
         const mailOptions = {
@@ -1297,7 +1313,8 @@ app.post('/api/users/forgot-password', async (req, res) => {
     if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
     const { email } = req.body;
     
-    if (!email || !email.includes('@')) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
         return res.status(400).json({ message: 'Valid email required' });
     }
     
@@ -1328,7 +1345,6 @@ app.post('/api/users/forgot-password', async (req, res) => {
                 res.json({ message: 'Reset link generated! Check server console.' });
             }
         } else {
-            console.log(`\n[DEV] Reset link for ${email}: ${resetUrl}\n`);
             res.json({ message: 'Reset link generated! Check server console.' });
         }
     } catch (err) {
@@ -1514,6 +1530,23 @@ app.get('/api/backup/download/:filename', adminAuth, (req, res) => {
 // Health check endpoint (must be before wildcard)
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Global Error Handler - Catches any unhandled errors
+app.use((err, req, res, next) => {
+    console.error('[SERVER ERROR]', err.message);
+    res.status(500).json({ message: 'Internal server error' });
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[UNHANDLED REJECTION]', reason);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+    console.error('[UNCAUGHT EXCEPTION]', err.message);
+    process.exit(1);
 });
 
 // Fallback to index.html for any other requests (useful for SPA, though this is a multi-page site)
