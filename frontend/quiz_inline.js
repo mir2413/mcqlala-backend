@@ -465,11 +465,17 @@ setTimeout(() => {
         }
 
         function goHome() {
-            if (quizData.length > 0 && Object.keys(selectedAnswers).length > 0) {
+            // Only show confirmation for custom quizzes (started from setup page)
+            const isCustomQuiz = sessionStorage.getItem('customQuizConfig');
+            
+            if (isCustomQuiz && quizData.length > 0 && Object.keys(selectedAnswers).length > 0) {
                 if (!confirm('You have unanswered or incomplete answers. Are you sure you want to leave?')) {
                     return;
                 }
             }
+            
+            // Clear session storage
+            sessionStorage.removeItem('customQuizConfig');
             window.location.href = 'index.html';
         }
 
@@ -632,6 +638,8 @@ setTimeout(() => {
 
                 if (response.ok) {
                     const data = await response.json();
+                    // Clear session storage before redirecting
+                    sessionStorage.removeItem('customQuizConfig');
                     window.location.href = `results.html?scoreId=${data._id}&score=${data.score}&total=${data.totalQuestions}&percentage=${data.percentage.toFixed(2)}&topic=${encodeURIComponent(finalTopic)}&category=${encodeURIComponent(finalCategory)}`;
                 } else {
                     alert('Failed to submit quiz');
