@@ -1,6 +1,32 @@
 // API Base URL - uses relative path (Vercel proxies to backend)
 const API_BASE_URL = '/api';
 
+// Cache version - increment this when you make major changes
+const CACHE_VERSION = 'v2.0';
+
+(function() {
+    const storedVersion = localStorage.getItem('cacheVersion');
+    if (storedVersion !== CACHE_VERSION) {
+        console.log('New version detected, clearing old cache...');
+        
+        // Clear old cache
+        localStorage.clear();
+        
+        // Set new version
+        localStorage.setItem('cacheVersion', CACHE_VERSION);
+        
+        // Clear session storage too
+        sessionStorage.clear();
+        
+        // Clear service worker cache
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => caches.delete(name));
+            });
+        }
+    }
+})();
+
 // XSS Protection - Sanitize user input before inserting into HTML
 function sanitizeHTML(str) {
     if (typeof str !== 'string') return str;
