@@ -35,6 +35,76 @@ function sanitizeHTML(str) {
     return div.innerHTML;
 }
 
+// ============================================
+// LOADING SPINNER - Shows/hides loading indicator
+// ============================================
+function showLoading() {
+    let loader = document.getElementById('globalLoader');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.id = 'globalLoader';
+        loader.innerHTML = '<div class="loader-spinner"></div>';
+        loader.setAttribute('role', 'status');
+        loader.setAttribute('aria-label', 'Loading');
+        loader.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:9999;';
+        document.body.appendChild(loader);
+    }
+    loader.style.display = 'flex';
+}
+
+function hideLoading() {
+    const loader = document.getElementById('globalLoader');
+    if (loader) loader.style.display = 'none';
+}
+
+// ============================================
+// TOAST NOTIFICATIONS - User-friendly error/success messages
+// ============================================
+function showToast(message, type = 'error', duration = 4000) {
+    let toast = document.getElementById('toastContainer');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toastContainer';
+        toast.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:10px;';
+        document.body.appendChild(toast);
+    }
+    
+    const toastEl = document.createElement('div');
+    const bg = type === 'error' ? '#EF4444' : type === 'success' ? '#22C55E' : '#3B82F6';
+    toastEl.style.cssText = `background:${bg};color:white;padding:12px 20px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-size:14px;max-width:300px;animation:fadeIn 0.3s ease;`;
+    toastEl.textContent = message;
+    toastEl.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    toast.appendChild(toastEl);
+    
+    setTimeout(() => {
+        toastEl.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => toastEl.remove(), 300);
+    }, duration);
+}
+
+// Add toast animations
+const style = document.createElement('style');
+style.textContent = '@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(10px)}}';
+document.head.appendChild(style);
+
+// ============================================
+// ACCESSIBILITY - Keyboard navigation & ARIA
+// ============================================
+function initAccessibility() {
+    document.querySelectorAll('button, a, input, select, textarea').forEach(el => {
+        if (!el.getAttribute('tabindex') && !el.hasAttribute('disabled')) {
+            el.setAttribute('tabindex', '0');
+        }
+    });
+    
+    document.querySelectorAll('.btn, .card').forEach((el, i) => {
+        if (!el.getAttribute('aria-label')) {
+            el.setAttribute('tabindex', '0');
+            el.setAttribute('role', 'button');
+        }
+    });
+}
+
 // CSRF Token Management
 let csrfToken = null;
 
@@ -885,7 +955,8 @@ function makeDraggable(element) {
 // Initialize draggable popup
 document.addEventListener('DOMContentLoaded', () => {
     loadNavLinks();
-    window.loadSiteSettings(); // Load title/footer on startup
+    window.loadSiteSettings();
+    initAccessibility();
     const popup = document.getElementById('contactPopup');
     if (popup) {
         makeDraggable(popup);
