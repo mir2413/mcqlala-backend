@@ -1,81 +1,27 @@
-console.log("Attempting to start server...");
-try {
-    require('express');
-} catch (e) {
-    console.error('\n❌ ERROR: The "express" module is missing.');
-    console.error('👉 Please run this command in your terminal: npm install express\n');
-    process.exit(1);
-}
+console.log("Starting server...");
 
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
-
-// Force IPv4 DNS resolution (Render free tier doesn't support IPv6 outbound)
+const compression = require('compression');
 const dns = require('dns');
+
 dns.setDefaultResultOrder('ipv4first');
+
+require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-    console.error('❌ ERROR: JWT_SECRET environment variable is not set.');
-    console.error('👉 Please set a strong random JWT_SECRET in your Render environment variables.');
+    console.error('⚠️  JWT_SECRET not set. Set it in environment variables.');
 }
 
-// MongoDB Setup
-let mongoose;
-try {
-    mongoose = require('mongoose');
-} catch (e) {
-    console.error('\n❌ ERROR: The "mongoose" module is missing.');
-    console.error('👉 Please run: npm install mongoose\n');
-    process.exit(1);
-}
-
-let bcryptjs;
-try {
-    bcryptjs = require('bcryptjs');
-} catch (e) {
-    console.error('\n❌ ERROR: The "bcryptjs" module is missing.');
-    console.error('👉 Please run: npm install bcryptjs\n');
-    process.exit(1);
-}
-
-let cors;
-try {
-    cors = require('cors');
-} catch (e) {
-    console.error('\n❌ ERROR: The "cors" module is missing.');
-    console.error('👉 Please run this command in your terminal: npm install cors\n');
-    process.exit(1);
-}
-
-let rateLimit;
-try {
-    rateLimit = require('express-rate-limit');
-} catch (e) {
-    console.error('\n❌ ERROR: The "rate-limit" module is missing.');
-    console.error('👉 Please run this command in your terminal: npm install express-rate-limit\n');
-    process.exit(1);
-}
-
-let helmet;
-try {
-    helmet = require('helmet');
-} catch (e) {
-    console.error('\n❌ ERROR: The "helmet" module is missing.');
-    console.error('👉 Please run this command in your terminal: npm install helmet\n');
-    process.exit(1);
-}
-
-try {
-    require('dotenv').config();
-} catch (e) {
-    console.error('\n❌ ERROR: The "dotenv" module is missing.');
-    console.error('👉 Please run this command in your terminal: npm install dotenv\n');
-    process.exit(1);
-}
+const mongoose = require('mongoose');
+const bcryptjs = require('bcryptjs');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 const app = express();
 const PORT = process.env.PORT || 3004;
@@ -400,6 +346,9 @@ app.use((req, res, next) => {
 // Serve static files (HTML, CSS, JS) from frontend directory
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));
+
+// Compression middleware - compresses responses for faster loading
+app.use(compression());
 
 // Middleware to parse JSON bodies (Move after static files to avoid parsing static requests)
 app.use(express.json({ limit: '1mb' }));
