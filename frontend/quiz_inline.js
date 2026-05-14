@@ -29,6 +29,10 @@
             }
             return newArray;
         }
+        
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
         window.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
@@ -584,11 +588,18 @@ setTimeout(() => {
 
             const userId = localStorage.getItem('userId');
             const percentage = quizData.length > 0 ? (score / quizData.length) * 100 : 0;
+            
+            // Get CSRF token
+            const csrfToken = await getCSRFToken();
 
             try {
                 const response = await fetch(`${API_BASE_URL}/scores`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
+                    },
+                    credentials: 'include',
                     body: JSON.stringify({
                         userId,
                         topic,
