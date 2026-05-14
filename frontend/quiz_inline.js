@@ -56,7 +56,7 @@
             if (timeQ > 0) timePerQuestion = timeQ;
             
             // If custom quiz config exists, use it
-            if (customQuizConfig) {
+            if (customQuizConfig && customQuizConfig.isCustomQuiz) {
                 if (customQuizConfig.timePerQuestion) {
                     timePerQuestion = customQuizConfig.timePerQuestion;
                 }
@@ -66,6 +66,10 @@
                     sessionStorage.setItem('examStartTime', Date.now().toString());
                 }
             }
+
+            // Only show exam timer for custom quizzes with time set
+            const shouldShowTimer = customQuizConfig && customQuizConfig.isCustomQuiz && 
+                                    customQuizConfig.totalTime > 0;
 
             // Disable right-click on quiz questions
             const questionsContainer = document.getElementById('questionsContainer');
@@ -103,8 +107,10 @@
                 }
             }
 
-            // Initialize exam timer if in exam mode
-            initializeExamTimer();
+            // Only initialize exam timer for custom quizzes with time set
+            if (shouldShowTimer) {
+                initializeExamTimer();
+            }
 
             await loadQuestions();
             if (quizData.length > 0) {
@@ -471,13 +477,16 @@ setTimeout(() => {
         let timerInterval = null;
         
         function initializeExamTimer() {
-            const mode = sessionStorage.getItem('examMode');
-            const duration = parseInt(sessionStorage.getItem('examDuration') || '0');
-            const startTime = parseInt(sessionStorage.getItem('examStartTime') || '0');
+            // Only show timer for custom quizzes (not URL mode parameter)
+            const configStr = sessionStorage.getItem('customQuizConfig');
+            if (!configStr) return;
             
-            if (!mode || mode === 'none' || !duration || !startTime) {
-                return; // Practice mode, no timer
-            }
+            const config = JSON.parse(configStr);
+            if (!config.isCustomQuiz || config.totalTime <= 0) return;
+            
+            sessionStorage.setItem('examMode', 'custom');
+            sessionStorage.setItem('examDuration', config.totalTime);
+            sessionStorage.setItem('examStartTime', Date.now().toString());
             
             const examTimer = document.getElementById('examTimer');
             const timerDisplay = document.getElementById('timerDisplay');
@@ -487,8 +496,8 @@ setTimeout(() => {
             }
             
             timerInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                const remaining = duration - elapsed;
+                const elapsed = Math.floor((Date.now() - parseInt(sessionStorage.getItem('examStartTime'))) / 1000);
+                const remaining = config.totalTime - elapsed;
                 
                 if (remaining <= 0) {
                     clearInterval(timerInterval);

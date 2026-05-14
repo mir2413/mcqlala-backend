@@ -611,6 +611,7 @@
             
             // Collect all selected topics and their MCQ counts
             const quizConfig = {
+                isCustomQuiz: true,
                 subjects: selectedSubjects.filter(s => s.name).map(s => ({
                     name: s.name,
                     topics: s.topics.filter(t => t.selected).map(t => ({
