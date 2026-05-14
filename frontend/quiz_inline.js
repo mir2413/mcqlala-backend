@@ -5,6 +5,10 @@
         let selectedAnswers = {};
         let topic = '';
         let category = '';
+        let totalQuestionLimit = 0;
+        let timePerQuestion = 0;
+        let perQuestionTimer = null;
+        let currentQuestionStartTime = 0;
 
         function escapeHtml(text) {
             if (typeof text !== 'string') return text || '';
@@ -20,6 +24,14 @@
             const params = new URLSearchParams(window.location.search);
             topic = params.get('topic') || 'General Knowledge';
             category = params.get('category') || 'General';
+            
+            // Get quiz settings from URL
+            const mode = params.get('mode') || 'none';
+            const limit = parseInt(params.get('limit') || '0');
+            const timeQ = parseInt(params.get('timePerQ') || '0');
+            
+            if (limit > 0) totalQuestionLimit = limit;
+            if (timeQ > 0) timePerQuestion = timeQ;
 
             // Disable right-click on quiz questions
             const questionsContainer = document.getElementById('questionsContainer');
@@ -36,6 +48,20 @@
 
             document.getElementById('username').textContent = username || 'Guest';
             document.getElementById('topicTitle').textContent = `${category} - ${topic}`;
+            
+            // Show mode indicator
+            const modeText = {
+                'none': 'Practice Mode',
+                'quick': 'Quick Test (5 min)',
+                'standard': 'Standard Test (30 min)',
+                'exam': 'Exam Simulation (60 min)'
+            };
+            if (mode !== 'none') {
+                const topicTitle = document.getElementById('topicTitle');
+                if (topicTitle) {
+                    topicTitle.textContent += ` - ${modeText[mode] || mode}`;
+                }
+            }
 
             // Initialize exam timer if in exam mode
             initializeExamTimer();
@@ -83,7 +109,14 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/mcqs?topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`);
                 if (!response.ok) throw new Error(`Server error: ${response.status}`);
-                quizData = await response.json();
+                let questions = await response.json();
+                
+                // Apply question limit if set
+                if (totalQuestionLimit > 0 && totalQuestionLimit < questions.length) {
+                    questions = questions.slice(0, totalQuestionLimit);
+                }
+                
+                quizData = questions;
                 document.getElementById('totalQuestions').textContent = quizData.length;
                 
                 if (quizData.length === 0) {
@@ -125,6 +158,11 @@
             const totalPages = Math.ceil(quizData.length / questionsPerPage);
             document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages} | Showing questions ${startIndex + 1} to ${endIndex}`;
             document.getElementById('pageIndicator').textContent = `${currentPage} / ${totalPages}`;
+            
+            // Start per-question timer if enabled
+            if (timePerQuestion > 0) {
+                startPerQuestionTimer();
+            }
 
             // Render questions
             const container = document.getElementById('questionsContainer');
@@ -232,6 +270,7 @@ setTimeout(() => {
         }
 
         function nextPage() {
+            clearPerQuestionTimer();
             const totalPages = Math.ceil(quizData.length / questionsPerPage);
             if (currentPage < totalPages && totalPages > 0) {
                 currentPage++;
@@ -242,6 +281,7 @@ setTimeout(() => {
         }
 
         function previousPage() {
+            clearPerQuestionTimer();
             if (currentPage > 1) {
                 currentPage--;
                 displayPage();
@@ -403,6 +443,50 @@ setTimeout(() => {
                     showToast('30 seconds remaining!', 'error');
                 }
             }, 1000);
+        }
+
+        // Per-question timer system
+        function startPerQuestionTimer() {
+            clearPerQuestionTimer();
+            currentQuestionStartTime = Date.now();
+            
+            const timerDisplay = document.getElementById('timerDisplay');
+            if (!timerDisplay) return;
+            
+            timerDisplay.style.color = '#22C55E';
+            timerDisplay.textContent = `Q-Time: ${timePerQuestion}s`;
+            
+            perQuestionTimer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - currentQuestionStartTime) / 1000);
+                const remaining = timePerQuestion - elapsed;
+                
+                if (remaining <= 0) {
+                    clearPerQuestionTimer();
+                    showToast('Time for this question is up! Moving to next.', 'warning');
+                    // Auto-select nothing and move to next page
+                    nextPage();
+                    return;
+                }
+                
+                timerDisplay.textContent = `Q-Time: ${remaining}s`;
+                
+                // Warning at 25% time left
+                if (remaining === Math.floor(timePerQuestion * 0.25)) {
+                    timerDisplay.style.color = '#f59e0b';
+                }
+                
+                // Warning at 10% time left
+                if (remaining === Math.floor(timePerQuestion * 0.1)) {
+                    timerDisplay.style.color = '#ef4444';
+                }
+            }, 1000);
+        }
+
+        function clearPerQuestionTimer() {
+            if (perQuestionTimer) {
+                clearInterval(perQuestionTimer);
+                perQuestionTimer = null;
+            }
         }
 
         // Track time taken for badge system

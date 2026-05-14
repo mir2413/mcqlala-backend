@@ -773,13 +773,30 @@ window.showSection = function(sectionId) {
 window.startSelectedQuiz = function() {
     const categorySelect = document.getElementById('categorySelect');
     const topicSelect = document.getElementById('topicSelect');
+    const questionCount = document.getElementById('questionCount');
+    const examMode = document.getElementById('examMode');
+    const timePerQuestion = document.getElementById('timePerQuestion');
     
     console.log('🚀 Start Quiz Requested');
 
     if (categorySelect && topicSelect && categorySelect.value && topicSelect.value) {
-        window.location.href = `quiz.html?topic=${encodeURIComponent(topicSelect.value)}&category=${encodeURIComponent(categorySelect.value)}`;
+        let url = `quiz.html?topic=${encodeURIComponent(topicSelect.value)}&category=${encodeURIComponent(categorySelect.value)}`;
+        
+        if (examMode && examMode.value) {
+            url += `&mode=${examMode.value}`;
+        }
+        
+        if (questionCount && questionCount.value && questionCount.value !== 'all') {
+            url += `&limit=${questionCount.value}`;
+        }
+        
+        if (timePerQuestion && timePerQuestion.value && timePerQuestion.value !== '0') {
+            url += `&timePerQ=${timePerQuestion.value}`;
+        }
+        
+        window.location.href = url;
     } else if (categorySelect && topicSelect) {
-         alert('Please select both a Category and a Topic.');
+         showToast('Please select both a Category and a Topic.', 'warning');
     } else {
          window.location.href = 'quiz.html';
     }
