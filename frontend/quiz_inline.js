@@ -41,15 +41,19 @@
             const isCustomQuiz = params.get('custom') === 'true';
             
             if (isCustomQuiz) {
-                // Load custom quiz configuration
+                // Load custom quiz configuration from sessionStorage
                 const configStr = sessionStorage.getItem('customQuizConfig');
                 if (configStr) {
                     customQuizConfig = JSON.parse(configStr);
+                    console.log('Custom quiz config loaded:', customQuizConfig);
                 }
             }
             
-            topic = params.get('topic') || 'General Knowledge';
-            category = params.get('category') || 'General';
+            // Only set topic/category from URL if NOT a custom quiz
+            if (!customQuizConfig || !customQuizConfig.isCustomQuiz) {
+                topic = params.get('topic') || 'General Knowledge';
+                category = params.get('category') || 'General';
+            }
             
             // Get quiz settings from URL
             const mode = params.get('mode') || 'none';
@@ -584,10 +588,9 @@ setTimeout(() => {
 
             const percentage = quizData.length > 0 ? (score / quizData.length) * 100 : 0;
             
-            // Save config for retake before clearing
-            const currentConfig = sessionStorage.getItem('customQuizConfig');
-            if (currentConfig) {
-                sessionStorage.setItem('lastQuizConfig', currentConfig);
+            // Save config for retake BEFORE clearing (use the in-memory variable)
+            if (customQuizConfig && customQuizConfig.isCustomQuiz) {
+                sessionStorage.setItem('lastQuizConfig', JSON.stringify(customQuizConfig));
             }
             
             // Clear session storage
