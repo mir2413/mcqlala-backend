@@ -403,12 +403,12 @@
             await loadSubjects();
             
             // Event listeners
-            document.getElementById('addSubjectBtn').addEventListener('click', addSubject);
+            document.getElementById('addSubjectBtn').addEventListener('click', addQuizSubject);
             document.getElementById('examMode').addEventListener('change', toggleCustomTime);
             document.getElementById('startCustomQuiz').addEventListener('click', startCustomQuiz);
             
             // Add first subject automatically
-            addSubject();
+            addQuizSubject();
         });
 
         async function loadSubjects() {
@@ -428,7 +428,7 @@
             customTimeGroup.style.display = examMode === 'custom' ? 'block' : 'none';
         }
 
-        function addSubject() {
+        function addQuizSubject() {
             subjectCounter++;
             const subjectId = `subject_${subjectCounter}`;
             
