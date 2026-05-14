@@ -1063,6 +1063,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 document.addEventListener('DOMContentLoaded', () => {
+    // Update UI based on login status
+    const userId = localStorage.getItem('userId');
+    const username = localStorage.getItem('username');
+    const userProfile = document.getElementById('userProfile');
+    const loginBtn = document.getElementById('loginBtn');
+    const usernameDisplay = document.getElementById('username');
+    
+    if (userId && username) {
+        // User is logged in - show profile, hide login button
+        if (userProfile) userProfile.style.display = 'flex';
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (usernameDisplay) usernameDisplay.textContent = username;
+    } else {
+        // User is not logged in - hide profile, show login button
+        if (userProfile) userProfile.style.display = 'none';
+        if (loginBtn) loginBtn.style.display = 'flex';
+    }
+    
     // Nav brand click
     const navBrand = document.getElementById('navBrand');
     if (navBrand) navBrand.addEventListener('click', () => window.location.href = 'index.html');

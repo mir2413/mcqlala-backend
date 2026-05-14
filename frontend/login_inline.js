@@ -36,6 +36,7 @@
                     if (response.ok) {
                         localStorage.setItem('userId', data.userId);
                         localStorage.setItem('username', data.username);
+                        localStorage.setItem('email', data.email);
                         localStorage.setItem('isAdmin', data.isAdmin);
                         window.location.href = 'index.html';
                     } else {
