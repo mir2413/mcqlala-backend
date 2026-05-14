@@ -1491,3 +1491,121 @@ window.alert = function(msg) {
         showToast(msg, 'info');
     }
 };
+
+// === PWA Service Worker Registration ===
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+                console.log('SW registered:', registration.scope);
+            })
+            .catch((error) => {
+                console.log('SW registration failed:', error);
+            });
+    });
+}
+
+// === Badge System ===
+window.BADGES = {
+    FIRST_QUIZ: { id: 'first_quiz', name: 'First Step', icon: 'fa-rocket', description: 'Complete your first quiz', color: '#3B82F6' },
+    FIVE_QUIZZES: { id: 'five_quizzes', name: 'Getting Started', icon: 'fa-fire', description: 'Complete 5 quizzes', color: '#f59e0b' },
+    TEN_QUIZZES: { id: 'ten_quizzes', name: 'Quiz Master', icon: 'fa-trophy', description: 'Complete 10 quizzes', color: '#22C55E' },
+    PERFECT_SCORE: { id: 'perfect_score', name: 'Perfect Score', icon: 'fa-star', description: 'Get 100% in any quiz', color: '#eab308' },
+    STREAK_3: { id: 'streak_3', name: 'On Fire', icon: 'fa-flame', description: '3 day streak', color: '#ef4444' },
+    STREAK_7: { id: 'streak_7', name: 'Week Warrior', icon: 'fa-calendar-check', description: '7 day streak', color: '#8b5cf6' },
+    SPEED_DEMO: { id: 'speed_demo', name: 'Speed Demon', icon: 'fa-bolt', description: 'Complete quiz in under 2 mins', color: '#06b6d4' },
+    CATEGORY_COMPLETE: { id: 'category_complete', name: 'Explorer', icon: 'fa-compass', description: 'Complete all topics in a category', color: '#ec4899' }
+};
+
+window.checkAndAwardBadges = async function(userId) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/scores/user/${userId}`);
+        if (!res.ok) return [];
+        
+        const scores = await res.json();
+        const earnedBadges = [];
+        
+        // Check first quiz badge
+        if (scores.length >= 1) earnedBadges.push(window.BADGES.FIRST_QUIZ);
+        
+        // Check 5 quizzes badge
+        if (scores.length >= 5) earnedBadges.push(window.BADGES.FIVE_QUIZZES);
+        
+        // Check 10 quizzes badge
+        if (scores.length >= 10) earnedBadges.push(window.BADGES.TEN_QUIZZES);
+        
+        // Check perfect score badge
+        if (scores.some(s => s.percentage === 100)) earnedBadges.push(window.BADGES.PERFECT_SCORE);
+        
+        // Check speed demon badge (completed in under 2 minutes)
+        if (scores.some(s => s.timeTaken && s.timeTaken < 120)) earnedBadges.push(window.BADGES.SPEED_DEMO);
+        
+        // Save badges to server
+        if (earnedBadges.length > 0) {
+            await fetch(`${API_BASE_URL}/badges`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, badges: earnedBadges.map(b => b.id) })
+            });
+        }
+        
+        return earnedBadges;
+    } catch (e) {
+        console.error('Error checking badges:', e);
+        return [];
+    }
+};
+
+window.showBadgeNotification = function(badge) {
+    const toast = document.createElement('div');
+    toast.className = 'toast success';
+    toast.style.borderLeftColor = badge.color;
+    toast.innerHTML = `
+        <i class="fa-solid ${badge.icon}" style="color: ${badge.color}; font-size: 24px;"></i>
+        <div style="flex: 1;">
+            <strong style="color: var(--text);">Badge Earned: ${badge.name}</strong>
+            <p style="color: var(--text-muted); margin: 4px 0 0 0; font-size: 12px;">${badge.description}</p>
+        </div>
+    `;
+    
+    const container = document.querySelector('.toast-container') || createToastContainer();
+    container.appendChild(toast);
+    setTimeout(() => removeToast(toast), 6000);
+};
+
+// === Timed Exam Mode ===
+window.examModes = {
+    none: { name: 'Practice Mode', duration: 0 },
+    quick: { name: 'Quick Test', duration: 5 * 60 },
+    standard: { name: 'Standard Test', duration: 30 * 60 },
+    exam: { name: 'Exam Simulation', duration: 60 * 60 },
+    custom: { name: 'Custom Timer', duration: 0 }
+};
+
+window.startTimedQuiz = function(topic, category, mode = 'standard') {
+    const examConfig = window.examModes[mode] || window.examModes.standard;
+    sessionStorage.setItem('examMode', mode);
+    sessionStorage.setItem('examDuration', examConfig.duration);
+    sessionStorage.setItem('examStartTime', Date.now().toString());
+    window.location.href = `quiz.html?topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}&mode=${mode}`;
+};
+
+window.getRemainingTime = function() {
+    const startTime = parseInt(sessionStorage.getItem('examStartTime') || '0');
+    const duration = parseInt(sessionStorage.getItem('examDuration') || '0');
+    if (!startTime || !duration) return null;
+    
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const remaining = duration - elapsed;
+    return remaining > 0 ? remaining : 0;
+};
+
+window.formatTime = function(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+window.isExamMode = function() {
+    return sessionStorage.getItem('examMode') && sessionStorage.getItem('examMode') !== 'none';
+};

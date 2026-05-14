@@ -124,7 +124,10 @@ const scoreSchema = new mongoose.Schema({
     category: String,
     score: Number,
     totalQuestions: Number,
+    percentage: Number,
     answers: [Number],
+    timeTaken: Number,
+    examMode: { type: String, default: 'none' },
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -162,6 +165,12 @@ const visitorSchema = new mongoose.Schema({
     visitedAt: { type: Date, default: Date.now }
 });
 
+const badgeSchema = new mongoose.Schema({
+    userId: String,
+    badges: [String],
+    earnedAt: { type: Date, default: Date.now }
+});
+
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 const Subject = mongoose.models.Subject || mongoose.model('Subject', subjectSchema);
 const MCQ = mongoose.models.MCQ || mongoose.model('MCQ', mcqSchema);
@@ -171,6 +180,7 @@ const Message = mongoose.models.Message || mongoose.model('Message', messageSche
 const Setting = mongoose.models.Setting || mongoose.model('Setting', settingSchema);
 const PDF = mongoose.models.PDF || mongoose.model('PDF', pdfSchema);
 const Visitor = mongoose.models.Visitor || mongoose.model('Visitor', visitorSchema);
+const Badge = mongoose.models.Badge || mongoose.model('Badge', badgeSchema);
 
 let isDbConnected = false;
 
@@ -1034,7 +1044,9 @@ app.post('/api/scores', auth, async (req, res) => {
             score,
             totalQuestions,
             percentage,
-            answers: req.body.answers || []
+            answers: req.body.answers || [],
+            timeTaken: req.body.timeTaken || null,
+            examMode: req.body.examMode || 'none'
         });
         console.log(`[SCORE] ${scoreData.username}: ${scoreData.score}/${scoreData.totalQuestions} (${scoreData.percentage}%) - ${scoreData.topic}`);
         res.json(scoreData);
@@ -1050,6 +1062,41 @@ app.get('/api/scores/user/:userId', async (req, res) => {
         res.json(userScores);
     } catch (err) {
         res.json([]);
+    }
+});
+
+// Badge Routes
+app.post('/api/badges', async (req, res) => {
+    if (!isDbConnected) return res.json({ success: true });
+    try {
+        const { userId, badges } = req.body;
+        
+        let userBadge = await Badge.findOne({ userId });
+        
+        if (userBadge) {
+            const newBadges = badges.filter(b => !userBadge.badges.includes(b));
+            if (newBadges.length > 0) {
+                userBadge.badges.push(...newBadges);
+                userBadge.earnedAt = new Date();
+                await userBadge.save();
+            }
+        } else {
+            await Badge.create({ userId, badges });
+        }
+        
+        res.json({ success: true });
+    } catch (err) {
+        res.json({ success: false, error: err.message });
+    }
+});
+
+app.get('/api/badges/:userId', async (req, res) => {
+    if (!isDbConnected) return res.json({ badges: [] });
+    try {
+        const userBadge = await Badge.findOne({ userId: req.params.userId });
+        res.json({ badges: userBadge ? userBadge.badges : [] });
+    } catch (err) {
+        res.json({ badges: [] });
     }
 });
 

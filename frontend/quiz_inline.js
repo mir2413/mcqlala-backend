@@ -37,6 +37,9 @@
             document.getElementById('username').textContent = username || 'Guest';
             document.getElementById('topicTitle').textContent = `${category} - ${topic}`;
 
+            // Initialize exam timer if in exam mode
+            initializeExamTimer();
+
             await loadQuestions();
             if (quizData.length > 0) {
                 displayPage();
@@ -349,5 +352,110 @@ setTimeout(() => {
                 }
             }
             window.location.href = 'index.html';
+        }
+
+        // === Exam Timer System ===
+        let timerInterval = null;
+        
+        function initializeExamTimer() {
+            const mode = sessionStorage.getItem('examMode');
+            const duration = parseInt(sessionStorage.getItem('examDuration') || '0');
+            const startTime = parseInt(sessionStorage.getItem('examStartTime') || '0');
+            
+            if (!mode || mode === 'none' || !duration || !startTime) {
+                return; // Practice mode, no timer
+            }
+            
+            const examTimer = document.getElementById('examTimer');
+            const timerDisplay = document.getElementById('timerDisplay');
+            
+            if (examTimer && timerDisplay) {
+                examTimer.style.display = 'flex';
+            }
+            
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const remaining = duration - elapsed;
+                
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    showToast('Time is up! Submitting your quiz...', 'warning');
+                    setTimeout(() => submitQuiz(), 2000);
+                    return;
+                }
+                
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                // Warning when 5 minutes left
+                if (remaining === 300) {
+                    showToast('5 minutes remaining!', 'warning');
+                }
+                
+                // Warning when 1 minute left
+                if (remaining === 60) {
+                    showToast('1 minute remaining!', 'error');
+                }
+                
+                // Warning when 30 seconds left
+                if (remaining === 30) {
+                    showToast('30 seconds remaining!', 'error');
+                }
+            }, 1000);
+        }
+
+        // Track time taken for badge system
+        function getTimeTaken() {
+            const startTime = sessionStorage.getItem('examStartTime');
+            if (!startTime) return null;
+            return Math.floor((Date.now() - parseInt(startTime)) / 1000);
+        }
+
+        async function submitQuiz() {
+            // Calculate score
+            let score = 0;
+            const answers = [];
+            
+            quizData.forEach((question, index) => {
+                const selectedOption = selectedAnswers[index];
+                answers.push(selectedOption);
+                
+                if (selectedOption === parseInt(question.correctAnswer)) {
+                    score++;
+                }
+            });
+
+            const userId = localStorage.getItem('userId');
+            const percentage = quizData.length > 0 ? (score / quizData.length) * 100 : 0;
+            const timeTaken = getTimeTaken();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/scores`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId,
+                        topic,
+                        category,
+                        score,
+                        totalQuestions: quizData.length,
+                        percentage,
+                        answers: answers,
+                        timeTaken: timeTaken,
+                        examMode: sessionStorage.getItem('examMode') || 'none'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    window.location.href = `results.html?scoreId=${data._id}&score=${data.score}&total=${data.totalQuestions}&percentage=${data.percentage.toFixed(2)}&topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`;
+                } else {
+                    alert('Failed to submit quiz');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while submitting the quiz');
+            }
         }
     
