@@ -31,7 +31,11 @@
             
             // Load subjects for all users (logged in or not)
             await loadSubjectsAndRender();
-            document.getElementById('categorySelect').addEventListener('change', loadTopicsForFilter);
+            
+            const categorySelect = document.getElementById('categorySelect');
+            if (categorySelect) {
+                categorySelect.addEventListener('change', loadTopicsForFilter);
+            }
         });
 
         function escapeJs(str) {
@@ -102,6 +106,8 @@
 
         function populateDropdowns(subjects) {
             const categorySelect = document.getElementById('categorySelect');
+            if (!categorySelect) return;
+            
             categorySelect.innerHTML = '<option value="">Select Category</option>';
             
             subjects.forEach(subject => {
@@ -115,6 +121,8 @@
         function loadTopicsForFilter() {
             const selectedCategory = document.getElementById('categorySelect').value;
             const topicSelect = document.getElementById('topicSelect');
+            if (!topicSelect) return;
+            
             topicSelect.innerHTML = '<option value="">Select Topic</option>';
 
             if (!selectedCategory) return;
