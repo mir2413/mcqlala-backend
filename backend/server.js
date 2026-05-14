@@ -1022,12 +1022,11 @@ app.delete('/api/navitems/:id', adminAuth, async (req, res) => {
     }
 });
 
-// Scores Routes
-app.post('/api/scores', auth, async (req, res) => {
-    const { topic, score, totalQuestions, percentage } = req.body;
-    const userId = req.user._id;
+// Scores Routes (Guest + Logged In users)
+app.post('/api/scores', async (req, res) => {
+    const { userId, topic, score, totalQuestions, percentage } = req.body;
 
-    if (!userId || topic === undefined || score === undefined || totalQuestions === undefined || percentage === undefined) {
+    if (topic === undefined || score === undefined || totalQuestions === undefined || percentage === undefined) {
         return res.status(400).json({ message: 'Missing required score fields.' });
     }
 
@@ -1036,11 +1035,30 @@ app.post('/api/scores', auth, async (req, res) => {
     }
 
     try {
+        // Check if user is logged in (has valid session via csrf token)
+        let username = 'Guest';
+        let dbUserId = userId;
+        
+        // Try to get user from session if csrf token is valid
+        try {
+            const csrfToken = req.headers['x-csrf-token'];
+            if (csrfToken) {
+                const decoded = jwt.verify(csrfToken, JWT_SECRET);
+                const user = await User.findById(decoded.userId);
+                if (user) {
+                    username = user.username;
+                    dbUserId = user._id.toString();
+                }
+            }
+        } catch (e) {
+            // User is guest, continue with guest submission
+        }
+
         const scoreData = await Score.create({
-            userId,
-            username: req.user.username,
+            userId: dbUserId,
+            username: username,
             topic,
-            category: req.body.category,
+            category: req.body.category || '',
             score,
             totalQuestions,
             percentage,
@@ -1048,6 +1066,12 @@ app.post('/api/scores', auth, async (req, res) => {
             timeTaken: req.body.timeTaken || null,
             examMode: req.body.examMode || 'none'
         });
+        console.log(`[SCORE] ${scoreData.username}: ${scoreData.score}/${scoreData.totalQuestions} (${scoreData.percentage}%) - ${scoreData.topic}`);
+        res.json(scoreData);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
         console.log(`[SCORE] ${scoreData.username}: ${scoreData.score}/${scoreData.totalQuestions} (${scoreData.percentage}%) - ${scoreData.topic}`);
         res.json(scoreData);
     } catch (err) {
