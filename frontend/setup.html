@@ -138,20 +138,24 @@
 
     <script src="app.js?v=1774360000000" defer></script>
     <script>
+        let cachedSubjects = [];
+        
         window.addEventListener('DOMContentLoaded', async () => {
             const categorySelect = document.getElementById('categorySelect');
             const topicSelect = document.getElementById('topicSelect');
             
             // Load categories from API
             try {
-                const response = await fetch('/api/categories');
+                const response = await fetch('/api/subjects');
                 if (response.ok) {
-                    const categories = await response.json();
+                    const subjects = await response.json();
+                    cachedSubjects = subjects;
+                    
                     categorySelect.innerHTML = '<option value="">Select Category</option>';
-                    categories.forEach(cat => {
+                    subjects.forEach(sub => {
                         const option = document.createElement('option');
-                        option.value = cat;
-                        option.textContent = cat;
+                        option.value = sub.name;
+                        option.textContent = sub.name;
                         categorySelect.appendChild(option);
                     });
                 }
@@ -160,30 +164,22 @@
             }
             
             // Load topics when category is selected
-            categorySelect.addEventListener('change', async () => {
+            categorySelect.addEventListener('change', () => {
                 if (!categorySelect.value) {
                     topicSelect.innerHTML = '<option value="">Select Topic</option>';
                     return;
                 }
                 
-                try {
-                    const response = await fetch(`/api/subjects?category=${encodeURIComponent(categorySelect.value)}`);
-                    if (response.ok) {
-                        const subjects = await response.json();
-                        topicSelect.innerHTML = '<option value="">Select Topic</option>';
-                        
-                        const matchingSubject = subjects.find(s => s.name === categorySelect.value);
-                        if (matchingSubject && matchingSubject.topics) {
-                            matchingSubject.topics.forEach(topic => {
-                                const option = document.createElement('option');
-                                option.value = topic.name || topic;
-                                option.textContent = topic.name || topic;
-                                topicSelect.appendChild(option);
-                            });
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error loading topics:', e);
+                topicSelect.innerHTML = '<option value="">Select Topic</option>';
+                const subject = cachedSubjects.find(s => s.name === categorySelect.value);
+                
+                if (subject && subject.topics && subject.topics.length > 0) {
+                    subject.topics.forEach(topic => {
+                        const option = document.createElement('option');
+                        option.value = topic.name || topic;
+                        option.textContent = topic.name || topic;
+                        topicSelect.appendChild(option);
+                    });
                 }
             });
             
