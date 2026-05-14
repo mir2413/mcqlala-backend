@@ -2,7 +2,7 @@
 const API_BASE_URL = '/api';
 
 // Cache version - increment this when you make major changes
-const CACHE_VERSION = 'v2.0';
+const CACHE_VERSION = 'v3.0';
 
 (function() {
     const storedVersion = localStorage.getItem('cacheVersion');

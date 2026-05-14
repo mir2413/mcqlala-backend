@@ -13,10 +13,6 @@ const STATIC_ASSETS = [
 ];
 
 const API_CACHE_NAME = 'mcqlala-api-v1';
-const API_CACHE_URLS = [
-  '/api/categories',
-  '/api/subjects'
-];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -45,51 +41,53 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Skip non-GET requests
+  if (request.method !== 'GET') return;
+
+  // For external API requests, just fetch without caching
   if (url.origin !== location.origin) {
-    if (request.method === 'GET') {
-      event.respondWith(
-        fetch(request)
-          .then((response) => {
-            const responseClone = response.clone();
-            caches.open(API_CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-            return response;
-          })
-          .catch(() => {
-            return caches.match(request);
-          })
-      );
-    }
     return;
   }
 
+  // Handle static assets with cache-first strategy
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
         if (cachedResponse) {
-          fetch(request).then((response) => {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, response);
-            });
-          });
           return cachedResponse;
         }
 
-        return fetch(request).then((response) => {
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        });
-      })
-      .catch(() => {
-        if (request.destination === 'document') {
-          return caches.match('/index.html');
-        }
+        return fetch(request)
+          .then((response) => {
+            // Don't cache bad responses or non-successful responses
+            if (!response || response.status !== 200) {
+              return response;
+            }
+
+            // Don't cache opaque responses (like from different origin)
+            if (response.type === 'opaque') {
+              return response;
+            }
+
+            // Clone the response before caching
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(request, responseToCache);
+              })
+              .catch((err) => {
+                console.log('Cache put failed:', err);
+              });
+
+            return response;
+          })
+          .catch(() => {
+            // Return offline page for navigation requests
+            if (request.destination === 'document') {
+              return caches.match('/index.html');
+            }
+            return new Response('Offline', { status: 503 });
+          });
       })
   );
 });
