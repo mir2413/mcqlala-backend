@@ -1,4 +1,5 @@
 
+        (function() {
         // Check if user is logged in
         window.addEventListener('DOMContentLoaded', async () => {
             checkAuth();
@@ -37,6 +38,7 @@
                 categorySelect.addEventListener('change', loadTopicsForFilter);
             }
         });
+})();
 
         function escapeJs(str) {
             if (str === null || str === undefined) return '';
