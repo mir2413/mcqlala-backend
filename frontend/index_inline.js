@@ -1,8 +1,10 @@
 // Check if user is logged in
 window.addEventListener('DOMContentLoaded', async () => {
-    checkAuth();
-    loadNavLinks();
-    const user = getCurrentUser();
+    // checkAuth is handled by app.js
+    if (typeof loadNavLinks === 'function') {
+        loadNavLinks();
+    }
+    const user = getCurrentUser ? getCurrentUser() : { username: null, userId: null };
     const isLoggedIn = user.username && user.userId;
     const userProfile = document.getElementById('userProfile');
     const loginBtn = document.getElementById('loginBtn');
@@ -21,7 +23,10 @@ window.addEventListener('DOMContentLoaded', async () => {
             adminBtn.style.marginRight = '10px';
             adminBtn.textContent = 'Admin Panel';
             adminBtn.onclick = () => window.location.href = 'admin.html';
-            document.getElementById('userProfile').insertBefore(adminBtn, document.querySelector('#userProfile .logout-btn'));
+            const logoutBtn = document.querySelector('#userProfile .logout-btn');
+            if (logoutBtn) {
+                document.getElementById('userProfile').insertBefore(adminBtn, logoutBtn);
+            }
         }
     } else {
         if (userProfile) userProfile.style.display = 'none';
