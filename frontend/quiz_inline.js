@@ -607,7 +607,7 @@ setTimeout(() => {
                 }
             }
             
-            // Clear session storage
+            // Clear session storage (keep lastQuizConfig for retake)
             sessionStorage.removeItem('customQuizConfig');
             window.location.href = 'index.html';
         }
