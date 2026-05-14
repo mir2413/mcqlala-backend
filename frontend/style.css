@@ -312,7 +312,8 @@ body.light-mode .theme-toggle:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 40px;
+    margin-top: 60px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
     gap: 15px;
 }
