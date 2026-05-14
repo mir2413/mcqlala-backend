@@ -34,6 +34,30 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // Backup submit handler - ensure submit works even if event listener fails
+        window.backupSubmitQuiz = function() {
+            if (quizData.length === 0) {
+                showToast('No questions loaded. Please refresh the page.', 'error');
+                return;
+            }
+            
+            let score = 0;
+            quizData.forEach((question, index) => {
+                if (selectedAnswers[index] === parseInt(question.correctAnswer)) {
+                    score++;
+                }
+            });
+
+            const percentage = quizData.length > 0 ? (score / quizData.length) * 100 : 0;
+            
+            if (customQuizConfig && customQuizConfig.isCustomQuiz) {
+                sessionStorage.setItem('lastQuizConfig', JSON.stringify(customQuizConfig));
+            }
+            
+            sessionStorage.removeItem('customQuizConfig');
+            window.location.href = `results.html?score=${score}&total=${quizData.length}&percentage=${percentage.toFixed(2)}&topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`;
+        };
+
         window.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
             

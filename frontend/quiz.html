@@ -74,13 +74,13 @@
                 <select id="pageJump" style="margin: 0 10px; padding: 5px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text);">
                     <option value="">Go to page</option>
                 </select>
-                <button id="nextBtn">Next →</button>
+                <button id="nextBtn" onclick="if(quizData.length > 0) { const tp = Math.ceil(quizData.length / 10); if(currentPage >= tp) { window.backupSubmitQuiz ? window.backupSubmitQuiz() : submitQuiz(); } else { nextPage(); } }">Next →</button>
             </div>
 
             <!-- CBT Controls (for custom quizzes) -->
             <div class="cbt-controls" id="cbtControls" style="display: none;">
                 <button id="cbtPrevBtn" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Previous</button>
-                <button id="cbtSubmitBtn" class="btn-primary" style="background: #22c55e;"><i class="fa-solid fa-check"></i> Submit Quiz</button>
+                <button id="cbtSubmitBtn" class="btn-primary" style="background: #22c55e;" onclick="window.backupSubmitQuiz ? window.backupSubmitQuiz() : submitQuiz();"><i class="fa-solid fa-check"></i> Submit Quiz</button>
                 <button id="cbtNextBtn" class="btn-secondary">Next <i class="fa-solid fa-arrow-right"></i></button>
             </div>
 
@@ -144,6 +144,6 @@
 
 <script src="app.js?v=1774349000000"></script>
     
-    <script src="quiz_inline.js?v=1774411000000"></script>
+    <script src="quiz_inline.js?v=1774412000000"></script>
 </body>
 </html>
