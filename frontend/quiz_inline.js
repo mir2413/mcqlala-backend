@@ -569,10 +569,6 @@ setTimeout(() => {
         }
         
         async function submitQuiz() {
-            // Check for unanswered questions
-            // Removed confirmation to allow users to finish partial quizzes (Practice Mode)
-            // e.g., answering 50 out of 1000 questions and stopping.
-
             // Calculate score
             let score = 0;
             const answers = [];
@@ -586,41 +582,13 @@ setTimeout(() => {
                 }
             });
 
-            const userId = localStorage.getItem('userId');
             const percentage = quizData.length > 0 ? (score / quizData.length) * 100 : 0;
             
-            // Get CSRF token
-            const csrfToken = await getCSRFToken();
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/scores`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'X-CSRF-Token': csrfToken
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        userId,
-                        topic,
-                        category,
-                        score,
-                        totalQuestions: quizData.length,
-                        percentage,
-                        answers: answers
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    window.location.href = `results.html?scoreId=${data._id}&score=${data.score}&total=${data.totalQuestions}&percentage=${data.percentage.toFixed(2)}&topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`;
-                } else {
-                    alert('Failed to submit quiz');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred while submitting the quiz');
-            }
+            // Clear session storage
+            sessionStorage.removeItem('customQuizConfig');
+            
+            // Redirect to results page with score data (no database save)
+            window.location.href = `results.html?score=${score}&total=${quizData.length}&percentage=${percentage.toFixed(2)}&topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`;
         }
 
         function goHome() {
