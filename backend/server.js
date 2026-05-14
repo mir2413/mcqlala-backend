@@ -1401,7 +1401,7 @@ app.get('/api/security/audit', adminAuth, (req, res) => {
     const audit = {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
-        httpsEnabled: !!(sslKeyPath && sslCertPath && process.env.NODE_ENV === 'production'),
+        httpsEnabled: !!(process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH && process.env.NODE_ENV === 'production'),
         corsOrigins: corsOrigins,
         rateLimiting: {
             enabled: true,
