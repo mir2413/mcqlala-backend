@@ -198,4 +198,142 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* CBT Mode Styles */
+        .cbt-navigator {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .cbt-navigator h4 {
+            color: var(--text);
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .cbt-questions-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .cbt-q-btn {
+            width: 38px;
+            height: 38px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cbt-q-btn:hover {
+            border-color: var(--primary);
+            background: var(--bg-card);
+        }
+
+        .cbt-q-btn.current {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .cbt-q-btn.answered {
+            background: var(--correct);
+            color: white;
+            border-color: var(--correct);
+        }
+
+        .cbt-q-btn.not-answered {
+            background: var(--wrong);
+            color: white;
+            border-color: var(--wrong);
+        }
+
+        .cbt-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .cbt-controls button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .cbt-controls button:hover {
+            transform: translateY(-2px);
+        }
+
+        .cbt-controls .btn-primary {
+            background: #22c55e;
+            color: white;
+            border: none;
+        }
+
+        .cbt-controls .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .cbt-question-number {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quiz-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            background: var(--bg-primary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quiz-option:hover {
+            border-color: var(--primary);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .quiz-option.selected {
+            border-color: var(--primary);
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .quiz-option .option-letter {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .quiz-option .option-text {
+            flex: 1;
+            color: var(--text);
+        }
     

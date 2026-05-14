@@ -46,6 +46,11 @@
             </div>
         </div>
 
+        <!-- CBT Question Navigator (for custom quizzes) -->
+        <div class="cbt-navigator" id="cbtNavigator" style="display: none;">
+            <div class="cbt-questions-grid" id="cbtQuestionsGrid"></div>
+        </div>
+
         <div class="page-info" id="pageInfo"></div>
 
         <div class="progress-summary">
@@ -70,6 +75,13 @@
                     <option value="">Go to page</option>
                 </select>
                 <button id="nextBtn">Next →</button>
+            </div>
+
+            <!-- CBT Controls (for custom quizzes) -->
+            <div class="cbt-controls" id="cbtControls" style="display: none;">
+                <button id="cbtPrevBtn" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+                <button id="cbtSubmitBtn" class="btn-primary" style="background: #22c55e;"><i class="fa-solid fa-check"></i> Submit Quiz</button>
+                <button id="cbtNextBtn" class="btn-secondary">Next <i class="fa-solid fa-arrow-right"></i></button>
             </div>
 
             <div class="quiz-actions" id="quizActions" style="display: none;">

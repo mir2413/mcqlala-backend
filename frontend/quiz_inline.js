@@ -144,7 +144,102 @@
                     }
                 });
             }
+            
+            // Initialize CBT mode if custom quiz
+            if (customQuizConfig && customQuizConfig.isCustomQuiz) {
+                initializeCBTMode();
+            }
         });
+
+        // CBT Mode Functions
+        let cbtCurrentIndex = 0;
+        
+        function initializeCBTMode() {
+            const cbtNavigator = document.getElementById('cbtNavigator');
+            const cbtControls = document.getElementById('cbtControls');
+            const paginationControls = document.getElementById('paginationControls');
+            
+            if (cbtNavigator) cbtNavigator.style.display = 'block';
+            if (cbtControls) cbtControls.style.display = 'flex';
+            if (paginationControls) paginationControls.style.display = 'none';
+            
+            // Create question grid
+            const grid = document.getElementById('cbtQuestionsGrid');
+            if (grid && quizData.length > 0) {
+                grid.innerHTML = '';
+                for (let i = 0; i < quizData.length; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'cbt-q-btn';
+                    btn.textContent = i + 1;
+                    btn.onclick = () => goToQuestion(i);
+                    grid.appendChild(btn);
+                }
+            }
+            
+            // Attach CBT control buttons
+            document.getElementById('cbtPrevBtn').onclick = cbtPrevQuestion;
+            document.getElementById('cbtNextBtn').onclick = cbtNextQuestion;
+            document.getElementById('cbtSubmitBtn').onclick = cbtSubmitQuiz;
+            
+            updateCBTUI();
+        }
+        
+        function updateCBTUI() {
+            if (!customQuizConfig || !customQuizConfig.isCustomQuiz) return;
+            
+            // Update question buttons
+            const buttons = document.querySelectorAll('.cbt-q-btn');
+            buttons.forEach((btn, index) => {
+                btn.classList.remove('current', 'answered', 'not-answered');
+                if (index === cbtCurrentIndex) {
+                    btn.classList.add('current');
+                } else if (selectedAnswers[index] !== undefined) {
+                    btn.classList.add('answered');
+                }
+            });
+            
+            // Update page info
+            document.getElementById('pageInfo').textContent = `Question ${cbtCurrentIndex + 1} of ${quizData.length}`;
+            
+            // Update answered count
+            const answeredCount = Object.keys(selectedAnswers).length;
+            document.getElementById('answeredCount').textContent = answeredCount;
+            
+            // Update navigation buttons
+            document.getElementById('cbtPrevBtn').disabled = cbtCurrentIndex === 0;
+            document.getElementById('cbtNextBtn').disabled = cbtCurrentIndex === quizData.length - 1;
+        }
+        
+        function goToQuestion(index) {
+            if (index >= 0 && index < quizData.length) {
+                cbtCurrentIndex = index;
+                displayPage();
+                updateCBTUI();
+                scrollToTop();
+            }
+        }
+        
+        function cbtPrevQuestion() {
+            if (cbtCurrentIndex > 0) {
+                goToQuestion(cbtCurrentIndex - 1);
+            }
+        }
+        
+        function cbtNextQuestion() {
+            if (cbtCurrentIndex < quizData.length - 1) {
+                goToQuestion(cbtCurrentIndex + 1);
+            }
+        }
+        
+        function cbtSubmitQuiz() {
+            const unanswered = quizData.length - Object.keys(selectedAnswers).length;
+            if (unanswered > 0) {
+                if (!confirm(`You have ${unanswered} unanswered question(s). Are you sure you want to submit?`)) {
+                    return;
+                }
+            }
+            submitQuiz();
+        }
 
         async function loadQuestions() {
             const questionsContainer = document.getElementById('questionsContainer');
@@ -229,6 +324,13 @@
         }
 
         function displayPage() {
+            // For CBT mode, show single question
+            if (customQuizConfig && customQuizConfig.isCustomQuiz) {
+                displaySingleQuestion(cbtCurrentIndex);
+                return;
+            }
+            
+            // Normal mode with pagination
             const startIndex = (currentPage - 1) * questionsPerPage;
             const endIndex = Math.min(startIndex + questionsPerPage, quizData.length);
             const pageQuestions = quizData.slice(startIndex, endIndex);
@@ -314,6 +416,52 @@
             updateAnsweredCount();
             updateProgressText();
         }
+
+        function displaySingleQuestion(index) {
+            const question = quizData[index];
+            const userAnswer = selectedAnswers[index];
+            
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = `
+                <div class="quiz-question">
+                    <div class="cbt-question-number">
+                        <span class="quiz-question-number">Question ${index + 1}</span>
+                    </div>
+                    <h4>${escapeHtml(question.question)}</h4>
+                    <div class="quiz-options">
+                        ${question.options.map((option, optIndex) => {
+                            let optionClass = 'quiz-option';
+                            if (userAnswer !== undefined) {
+                                if (optIndex === userAnswer) optionClass += ' selected';
+                            }
+                            return `
+                                <div class="${optionClass}" onclick="cbtSelectOption(${index}, ${optIndex})">
+                                    <span class="option-letter">${String.fromCharCode(65 + optIndex)}</span>
+                                    <span class="option-text">${escapeHtml(option)}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        window.cbtSelectOption = function(questionIndex, optionIndex) {
+            selectedAnswers[questionIndex] = optionIndex;
+            updateAnsweredCount();
+            updateProgressText();
+            
+            // Update UI immediately
+            const options = document.querySelectorAll('.quiz-option');
+            options.forEach((opt, idx) => {
+                opt.classList.remove('selected');
+                if (idx === optionIndex) {
+                    opt.classList.add('selected');
+                }
+            });
+            
+            updateCBTUI();
+        };
 
         // FIX: Make function global to ensure HTML onchange attribute can find it
         window.saveAnswer = function(questionIndex, optionIndex) {
