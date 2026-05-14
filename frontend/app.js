@@ -1300,18 +1300,6 @@ if (localStorage.getItem('userId')) {
     sessionCheckInterval = setInterval(checkSessionTimeout, 10000); // Check every 10 seconds
 }
 
-// Replace alert() calls with toast notifications
-const originalAlert = window.alert;
-window.alert = function(msg) {
-    if (typeof msg === 'string' && msg.toLowerCase().includes('error')) {
-        showToast(msg, 'error');
-    } else if (typeof msg === 'string' && (msg.toLowerCase().includes('success') || msg.toLowerCase().includes('saved'))) {
-        showToast(msg, 'success');
-    } else {
-        showToast(msg, 'info');
-    }
-};
-
 // === PWA Service Worker Registration ===
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
