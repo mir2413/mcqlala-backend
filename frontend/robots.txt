@@ -1,4 +1,7 @@
 User-agent: *
+Allow: /
+Allow: /sitemap.xml
+
 Disallow: /admin.html
 Disallow: /admin_inline.js
 Disallow: /admin_inline.css
@@ -9,4 +12,5 @@ Disallow: /profile.html
 Disallow: /subject.html
 Disallow: /forgot-password.html
 Disallow: /reset-password.html
-Disallow: /register.html
+
+Sitemap: https://mcqlala.in/sitemap.xml

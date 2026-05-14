@@ -84,10 +84,20 @@
                 document.getElementById('totalQuestions').textContent = quizData.length;
                 
                 if (quizData.length === 0) {
-                    questionsContainer.innerHTML = '<p style="text-align: center; color: #999;">No questions available for this topic.</p>';
+                    questionsContainer.innerHTML = `
+                        <div style="text-align: center; padding: 60px 20px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);">
+                            <i class="fa-solid fa-inbox" style="font-size: 64px; color: var(--text-muted); margin-bottom: 20px;"></i>
+                            <h3 style="color: var(--text); margin-bottom: 10px;">No Questions Available</h3>
+                            <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 15px;">We don't have any questions for this topic yet. Check back later or select a different topic.</p>
+                            <a href="index.html" style="display: inline-block; background: var(--primary); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                                <i class="fa-solid fa-arrow-left"></i> Back to Home
+                            </a>
+                        </div>
+                    `;
                     questionsContainer.style.display = 'block';
                     quizActions.style.display = 'flex';
-                    document.getElementById('pageInfo').textContent = 'Page 0 of 0';
+                    paginationControls.style.display = 'none';
+                    document.getElementById('pageInfo').textContent = 'No questions found';
                 } else {
                     questionsContainer.style.display = 'grid';
                     paginationControls.style.display = 'flex';
