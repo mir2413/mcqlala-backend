@@ -1,3 +1,6 @@
+// Define API_BASE_URL locally (same as app.js)
+var API_BASE_URL = '/api';
+
 window.addEventListener('DOMContentLoaded', async function() {
     // Load subjects
     await loadSubjectsAndRender();
