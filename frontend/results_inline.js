@@ -1,5 +1,4 @@
-
-        window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
             const score = parseInt(params.get('score')) || 0;
             const total = parseInt(params.get('total')) || 0;
@@ -10,7 +9,7 @@
             }
 
             const username = localStorage.getItem('username');
-            document.getElementById('username').textContent = username;
+            document.getElementById('username').textContent = username || 'Guest';
 
             document.getElementById('scoreText').textContent = `${score}/${total}`;
             document.getElementById('percentageText').textContent = `${percentage.toFixed(2)}%`;
@@ -37,13 +36,24 @@
         }
 
         function retakeQuiz() {
-            const params = new URLSearchParams(window.location.search);
-            const topic = params.get('topic') || 'General Knowledge';
-            const category = params.get('category') || 'General';
-            window.location.href = `quiz.html?topic=${topic}&category=${category}`;
+            // Check if there was a custom quiz config stored
+            const savedConfig = sessionStorage.getItem('lastQuizConfig');
+            
+            if (savedConfig) {
+                // Retake custom quiz with same settings
+                sessionStorage.setItem('customQuizConfig', savedConfig);
+                window.location.href = 'quiz.html?custom=true';
+            } else {
+                // Regular quiz - use URL params
+                const params = new URLSearchParams(window.location.search);
+                const topic = params.get('topic') || 'General Knowledge';
+                const category = params.get('category') || 'General';
+                window.location.href = `quiz.html?topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`;
+            }
         }
 
         function goHome() {
+            // Clear last quiz config when going home
+            sessionStorage.removeItem('lastQuizConfig');
             window.location.href = 'index.html';
         }
-    

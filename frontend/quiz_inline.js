@@ -584,6 +584,12 @@ setTimeout(() => {
 
             const percentage = quizData.length > 0 ? (score / quizData.length) * 100 : 0;
             
+            // Save config for retake before clearing
+            const currentConfig = sessionStorage.getItem('customQuizConfig');
+            if (currentConfig) {
+                sessionStorage.setItem('lastQuizConfig', currentConfig);
+            }
+            
             // Clear session storage
             sessionStorage.removeItem('customQuizConfig');
             
