@@ -1040,8 +1040,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
-});
 document.addEventListener('DOMContentLoaded', () => {
     // Nav brand click
     const navBrand = document.getElementById('navBrand');
