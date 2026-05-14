@@ -1066,13 +1066,7 @@ app.post('/api/scores', async (req, res) => {
             timeTaken: req.body.timeTaken || null,
             examMode: req.body.examMode || 'none'
         });
-        console.log(`[SCORE] ${scoreData.username}: ${scoreData.score}/${scoreData.totalQuestions} (${scoreData.percentage}%) - ${scoreData.topic}`);
-        res.json(scoreData);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-        console.log(`[SCORE] ${scoreData.username}: ${scoreData.score}/${scoreData.totalQuestions} (${scoreData.percentage}%) - ${scoreData.topic}`);
+console.log(`[SCORE] ${scoreData.username}: ${scoreData.score}/${scoreData.totalQuestions} (${scoreData.percentage}%) - ${scoreData.topic}`);
         res.json(scoreData);
     } catch (err) {
         res.status(500).json({ error: err.message });
