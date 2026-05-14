@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Setup - mcqlala</title>
+    <title>Custom Quiz - mcqlala</title>
     <link rel="stylesheet" href="style.css?v=1774346226095">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous">
     <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
@@ -28,77 +28,91 @@
     </nav>
 
     <div class="main-container">
-        <div class="quiz-setup-fullpage">
+        <div class="custom-quiz-builder">
             <h2 class="setup-page-title">
-                <i class="fa-solid fa-gear"></i> Configure Your Quiz
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Build Your Custom Quiz
             </h2>
-            
-            <div class="quiz-setup-card" id="quizSetupCard">
-                <div class="setup-row">
-                    <div class="setup-group">
-                        <label for="categorySelect"><i class="fa-solid fa-folder"></i> Category</label>
-                        <select id="categorySelect" name="category">
-                            <option value="">Select Category</option>
-                        </select>
+
+            <div class="quiz-settings-panel">
+                <div class="settings-section">
+                    <h3><i class="fa-solid fa-clock"></i> Exam Settings</h3>
+                    <div class="settings-row">
+                        <div class="setting-group">
+                            <label for="examMode">Exam Mode</label>
+                            <select id="examMode">
+                                <option value="none">Practice Mode (No Timer)</option>
+                                <option value="quick">Quick Test (5 min)</option>
+                                <option value="standard" selected>Standard Test (30 min)</option>
+                                <option value="exam">Exam Simulation (60 min)</option>
+                                <option value="custom">Custom Time</option>
+                            </select>
+                        </div>
+                        <div class="setting-group" id="customTimeGroup" style="display: none;">
+                            <label for="customTime">Custom Time (minutes)</label>
+                            <input type="number" id="customTime" min="1" max="300" value="30" placeholder="Enter minutes">
+                        </div>
+                        <div class="setting-group">
+                            <label for="timePerQuestion">Time Per Question</label>
+                            <select id="timePerQuestion">
+                                <option value="0">No Limit</option>
+                                <option value="30">30 seconds</option>
+                                <option value="45">45 seconds</option>
+                                <option value="60">1 minute</option>
+                                <option value="90">1.5 minutes</option>
+                                <option value="120">2 minutes</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="setup-group">
-                        <label for="topicSelect"><i class="fa-solid fa-book"></i> Topic</label>
-                        <select id="topicSelect" name="topic">
-                            <option value="">Select Topic</option>
-                        </select>
-                    </div>
+                </div>
+            </div>
+
+            <div class="subjects-selector">
+                <div class="section-header">
+                    <h3><i class="fa-solid fa-layer-group"></i> Select Subjects & Topics</h3>
+                    <button class="btn-add-subject" id="addSubjectBtn">
+                        <i class="fa-solid fa-plus"></i> Add Subject
+                    </button>
                 </div>
                 
-                <div class="setup-row">
-                    <div class="setup-group">
-                        <label for="questionCount"><i class="fa-solid fa-list-ol"></i> Number of Questions</label>
-                        <select id="questionCount" name="questionCount">
-                            <option value="10">10 Questions</option>
-                            <option value="20">20 Questions</option>
-                            <option value="30">30 Questions</option>
-                            <option value="50">50 Questions</option>
-                            <option value="100">100 Questions</option>
-                            <option value="all">All Available</option>
-                        </select>
-                    </div>
-                    <div class="setup-group">
-                        <label for="examMode"><i class="fa-solid fa-clock"></i> Exam Mode</label>
-                        <select id="examMode" name="examMode">
-                            <option value="none">Practice Mode (No Timer)</option>
-                            <option value="quick">Quick Test (5 min)</option>
-                            <option value="standard" selected>Standard Test (30 min)</option>
-                            <option value="exam">Exam Simulation (60 min)</option>
-                        </select>
-                    </div>
+                <div class="subjects-list" id="subjectsList">
+                    <!-- Subject cards will be added here dynamically -->
                 </div>
+            </div>
 
-                <div class="setup-row">
-                    <div class="setup-group">
-                        <label for="timePerQuestion"><i class="fa-solid fa-stopwatch"></i> Time Per Question (sec)</label>
-                        <select id="timePerQuestion" name="timePerQuestion">
-                            <option value="0">No Limit</option>
-                            <option value="30">30 seconds</option>
-                            <option value="45">45 seconds</option>
-                            <option value="60">1 minute</option>
-                            <option value="90">1.5 minutes</option>
-                            <option value="120">2 minutes</option>
-                        </select>
+            <div class="summary-panel">
+                <div class="summary-header">
+                    <h3><i class="fa-solid fa-clipboard-list"></i> Quiz Summary</h3>
+                </div>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Subjects Selected:</span>
+                        <span class="stat-value" id="subjectCount">0</span>
                     </div>
-                    <div class="setup-group start-btn-container">
-                        <button class="btn-primary btn-start" id="startQuizBtn">
-                            <i class="fa-solid fa-play"></i> Start Quiz
-                        </button>
+                    <div class="stat-item">
+                        <span class="stat-label">Topics Selected:</span>
+                        <span class="stat-value" id="topicCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Questions:</span>
+                        <span class="stat-value" id="totalQuestions">0</span>
                     </div>
                 </div>
+            </div>
+
+            <div class="start-quiz-section">
+                <button class="btn-start-quiz" id="startCustomQuiz" disabled>
+                    <i class="fa-solid fa-play"></i> Start Custom Quiz
+                </button>
+                <p class="start-hint" id="startHint">Add at least one subject to start</p>
             </div>
         </div>
     </div>
 
     <style>
-        .quiz-setup-fullpage {
-            max-width: 800px;
+        .custom-quiz-builder {
+            max-width: 900px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 30px 20px;
         }
         
         .setup-page-title {
@@ -109,110 +123,509 @@
             font-weight: 800;
         }
         
-        .setup-page-title i {
-            margin-right: 10px;
-        }
-        
-        .quiz-setup-card {
+        .quiz-settings-panel {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
         }
         
+        .settings-section h3 {
+            color: var(--text);
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .settings-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .setting-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .setting-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        
+        .setting-group select,
+        .setting-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text);
+            font-size: 14px;
+        }
+        
+        .subjects-selector {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-header h3 {
+            color: var(--text);
+            font-size: 16px;
+            margin: 0;
+        }
+        
+        .btn-add-subject {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-add-subject:hover {
+            background: #5569e0;
+            transform: translateY(-2px);
+        }
+        
+        .subjects-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .subject-card {
+            background: var(--bg-primary);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            position: relative;
+        }
+        
+        .subject-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .subject-name-select {
+            flex: 1;
+        }
+        
+        .subject-name-select select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text);
+            font-size: 14px;
+        }
+        
+        .btn-remove-subject {
+            background: var(--wrong);
+            color: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+        
+        .topics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .topic-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .topic-item:hover {
+            border-color: var(--primary);
+        }
+        
+        .topic-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .topic-item label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .topic-item .mcq-count {
+            width: 70px;
+            padding: 5px 8px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            background: var(--bg-primary);
+            color: var(--text);
+            font-size: 13px;
+            text-align: center;
+        }
+        
+        .summary-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            color: white;
+        }
+        
+        .summary-header h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+        }
+        
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-label {
+            display: block;
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .start-quiz-section {
+            text-align: center;
+        }
+        
+        .btn-start-quiz {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+        }
+        
+        .btn-start-quiz:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.5);
+        }
+        
+        .btn-start-quiz:disabled {
+            background: #666;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        .start-hint {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        
+        .no-topics {
+            color: var(--text-muted);
+            font-size: 13px;
+            padding: 10px;
+            text-align: center;
+            background: var(--bg-card);
+            border-radius: 8px;
+        }
+
         @media (max-width: 768px) {
-            .quiz-setup-card {
-                padding: 25px 20px;
-            }
-            
-            .setup-row {
+            .settings-row {
                 flex-direction: column;
             }
             
-            .setup-page-title {
-                font-size: 22px;
+            .topics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-stats {
+                flex-direction: column;
+                gap: 10px;
             }
         }
     </style>
 
-    <script src="app.js?v=1774360000000" defer></script>
+    <script src="app.js?v=1774380000000" defer></script>
     <script>
-        let cachedSubjects = [];
-        
+        let allSubjects = [];
+        let selectedSubjects = [];
+        let subjectCounter = 0;
+
         window.addEventListener('DOMContentLoaded', async () => {
-            const categorySelect = document.getElementById('categorySelect');
-            const topicSelect = document.getElementById('topicSelect');
+            // Load all subjects
+            await loadSubjects();
             
-            // Load categories from API
+            // Event listeners
+            document.getElementById('addSubjectBtn').addEventListener('click', addSubject);
+            document.getElementById('examMode').addEventListener('change', toggleCustomTime);
+            document.getElementById('startCustomQuiz').addEventListener('click', startCustomQuiz);
+            
+            // Add first subject automatically
+            addSubject();
+        });
+
+        async function loadSubjects() {
             try {
                 const response = await fetch('/api/subjects');
                 if (response.ok) {
-                    const subjects = await response.json();
-                    cachedSubjects = subjects;
-                    
-                    categorySelect.innerHTML = '<option value="">Select Category</option>';
-                    subjects.forEach(sub => {
-                        const option = document.createElement('option');
-                        option.value = sub.name;
-                        option.textContent = sub.name;
-                        categorySelect.appendChild(option);
-                    });
+                    allSubjects = await response.json();
                 }
             } catch (e) {
-                console.error('Error loading categories:', e);
+                console.error('Error loading subjects:', e);
+            }
+        }
+
+        function toggleCustomTime() {
+            const examMode = document.getElementById('examMode').value;
+            const customTimeGroup = document.getElementById('customTimeGroup');
+            customTimeGroup.style.display = examMode === 'custom' ? 'block' : 'none';
+        }
+
+        function addSubject() {
+            subjectCounter++;
+            const subjectId = `subject_${subjectCounter}`;
+            
+            const subjectData = {
+                id: subjectId,
+                name: '',
+                topics: []
+            };
+            
+            selectedSubjects.push(subjectData);
+            renderSubjectsList();
+        }
+
+        function removeSubject(subjectId) {
+            selectedSubjects = selectedSubjects.filter(s => s.id !== subjectId);
+            renderSubjectsList();
+            updateSummary();
+        }
+
+        function renderSubjectsList() {
+            const container = document.getElementById('subjectsList');
+            
+            if (selectedSubjects.length === 0) {
+                container.innerHTML = `
+                    <div class="no-topics">
+                        <i class="fa-solid fa-info-circle"></i> Click "Add Subject" to start building your quiz
+                    </div>
+                `;
+                return;
             }
             
-            // Load topics when category is selected
-            categorySelect.addEventListener('change', () => {
-                if (!categorySelect.value) {
-                    topicSelect.innerHTML = '<option value="">Select Topic</option>';
-                    return;
-                }
+            container.innerHTML = selectedSubjects.map(subject => {
+                const availableSubjects = allSubjects.filter(s => 
+                    !selectedSubjects.some(sel => sel.id !== subject.id && sel.name === s.name)
+                );
                 
-                topicSelect.innerHTML = '<option value="">Select Topic</option>';
-                const subject = cachedSubjects.find(s => s.name === categorySelect.value);
+                return `
+                    <div class="subject-card" id="${subject.id}">
+                        <div class="subject-card-header">
+                            <div class="subject-name-select">
+                                <select onchange="updateSubject('${subject.id}', this.value)">
+                                    <option value="">Select Subject</option>
+                                    ${availableSubjects.map(s => `
+                                        <option value="${s.name}" ${subject.name === s.name ? 'selected' : ''}>
+                                            ${s.name}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            <button class="btn-remove-subject" onclick="removeSubject('${subject.id}')">
+                                <i class="fa-solid fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="topics-grid" id="topics_${subject.id}">
+                            ${renderTopics(subject)}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTopics(subject) {
+            if (!subject.name) {
+                return `<div class="no-topics">Select a subject to see topics</div>`;
+            }
+            
+            const subjectData = allSubjects.find(s => s.name === subject.name);
+            
+            if (!subjectData || !subjectData.topics || subjectData.topics.length === 0) {
+                return `<div class="no-topics">No topics available for this subject</div>`;
+            }
+            
+            return subjectData.topics.map(topic => {
+                const topicName = topic.name || topic;
+                const topicData = subject.topics.find(t => t.name === topicName);
+                const isSelected = topicData ? topicData.selected : false;
+                const mcqCount = topicData ? topicData.mcqCount : 10;
                 
-                if (subject && subject.topics && subject.topics.length > 0) {
-                    subject.topics.forEach(topic => {
-                        const option = document.createElement('option');
-                        option.value = topic.name || topic;
-                        option.textContent = topic.name || topic;
-                        topicSelect.appendChild(option);
-                    });
+                return `
+                    <div class="topic-item">
+                        <input type="checkbox" 
+                            id="chk_${subject.id}_${topicName}" 
+                            ${isSelected ? 'checked' : ''} 
+                            onchange="toggleTopic('${subject.id}', '${topicName}', this.checked)">
+                        <label for="chk_${subject.id}_${topicName}">${topicName}</label>
+                        <input type="number" 
+                            class="mcq-count" 
+                            value="${mcqCount}" 
+                            min="1" max="100"
+                            ${!isSelected ? 'disabled' : ''}
+                            onchange="updateTopicMcqCount('${subject.id}', '${topicName}', this.value)"
+                            id="mcq_${subject.id}_${topicName}">
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateSubject(subjectId, subjectName) {
+            const subject = selectedSubjects.find(s => s.id === subjectId);
+            if (subject) {
+                subject.name = subjectName;
+                subject.topics = [];
+                renderSubjectsList();
+                updateSummary();
+            }
+        }
+
+        function toggleTopic(subjectId, topicName, isSelected) {
+            const subject = selectedSubjects.find(s => s.id === subjectId);
+            if (!subject) return;
+            
+            if (isSelected) {
+                if (!subject.topics.some(t => t.name === topicName)) {
+                    subject.topics.push({ name: topicName, selected: true, mcqCount: 10 });
                 }
+                document.getElementById(`mcq_${subjectId}_${topicName}`).disabled = false;
+            } else {
+                subject.topics = subject.topics.filter(t => t.name !== topicName);
+                document.getElementById(`mcq_${subjectId}_${topicName}`).disabled = true;
+            }
+            
+            updateSummary();
+        }
+
+        function updateTopicMcqCount(subjectId, topicName, count) {
+            const subject = selectedSubjects.find(s => s.id === subjectId);
+            if (!subject) return;
+            
+            const topic = subject.topics.find(t => t.name === topicName);
+            if (topic) {
+                topic.mcqCount = parseInt(count) || 10;
+                updateSummary();
+            }
+        }
+
+        function updateSummary() {
+            let subjectCount = 0;
+            let topicCount = 0;
+            let totalQuestions = 0;
+            
+            selectedSubjects.forEach(subject => {
+                if (subject.name) subjectCount++;
+                
+                subject.topics.forEach(topic => {
+                    if (topic.selected) {
+                        topicCount++;
+                        totalQuestions += topic.mcqCount || 10;
+                    }
+                });
             });
             
-            // Start quiz button
-            document.getElementById('startQuizBtn').addEventListener('click', () => {
-                const category = categorySelect.value;
-                const topic = topicSelect.value;
-                const questionCount = document.getElementById('questionCount').value;
-                const examMode = document.getElementById('examMode').value;
-                const timePerQuestion = document.getElementById('timePerQuestion').value;
-                
-                if (!category || !topic) {
-                    showToast('Please select both Category and Topic', 'warning');
-                    return;
-                }
-                
-                let url = `quiz.html?topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`;
-                
-                if (examMode !== 'none') {
-                    url += `&mode=${examMode}`;
-                }
-                
-                if (questionCount !== 'all') {
-                    url += `&limit=${questionCount}`;
-                }
-                
-                if (timePerQuestion !== '0') {
-                    url += `&timePerQ=${timePerQuestion}`;
-                }
-                
-                window.location.href = url;
-            });
-        });
+            document.getElementById('subjectCount').textContent = subjectCount;
+            document.getElementById('topicCount').textContent = topicCount;
+            document.getElementById('totalQuestions').textContent = totalQuestions;
+            
+            const startBtn = document.getElementById('startCustomQuiz');
+            const hint = document.getElementById('startHint');
+            
+            if (topicCount > 0 && totalQuestions > 0) {
+                startBtn.disabled = false;
+                hint.textContent = `${totalQuestions} questions from ${topicCount} topics ready!`;
+                hint.style.color = 'var(--correct)';
+            } else {
+                startBtn.disabled = true;
+                hint.textContent = 'Add at least one subject with topics to start';
+                hint.style.color = 'var(--text-muted)';
+            }
+        }
+
+        function startCustomQuiz() {
+            const examMode = document.getElementById('examMode').value;
+            let totalTime = 0;
+            
+            if (examMode === 'quick') totalTime = 5 * 60;
+            else if (examMode === 'standard') totalTime = 30 * 60;
+            else if (examMode === 'exam') totalTime = 60 * 60;
+            else if (examMode === 'custom') totalTime = parseInt(document.getElementById('customTime').value) * 60;
+            
+            const timePerQuestion = parseInt(document.getElementById('timePerQuestion').value) || 0;
+            
+            // Collect all selected topics and their MCQ counts
+            const quizConfig = {
+                subjects: selectedSubjects.filter(s => s.name).map(s => ({
+                    name: s.name,
+                    topics: s.topics.filter(t => t.selected).map(t => ({
+                        name: t.name,
+                        count: t.mcqCount
+                    }))
+                })),
+                totalTime,
+                timePerQuestion
+            };
+            
+            // Store config and redirect to quiz page
+            sessionStorage.setItem('customQuizConfig', JSON.stringify(quizConfig));
+            window.location.href = 'quiz.html?custom=true';
+        }
     </script>
 </body>
 </html>

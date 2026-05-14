@@ -9,6 +9,7 @@
         let timePerQuestion = 0;
         let perQuestionTimer = null;
         let currentQuestionStartTime = 0;
+        let customQuizConfig = null;
 
         function escapeHtml(text) {
             if (typeof text !== 'string') return text || '';
@@ -19,9 +20,30 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
+        
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
 
         window.addEventListener('DOMContentLoaded', async () => {
             const params = new URLSearchParams(window.location.search);
+            
+            // Check for custom quiz mode
+            const isCustomQuiz = params.get('custom') === 'true';
+            
+            if (isCustomQuiz) {
+                // Load custom quiz configuration
+                const configStr = sessionStorage.getItem('customQuizConfig');
+                if (configStr) {
+                    customQuizConfig = JSON.parse(configStr);
+                }
+            }
+            
             topic = params.get('topic') || 'General Knowledge';
             category = params.get('category') || 'General';
             
@@ -32,6 +54,18 @@
             
             if (limit > 0) totalQuestionLimit = limit;
             if (timeQ > 0) timePerQuestion = timeQ;
+            
+            // If custom quiz config exists, use it
+            if (customQuizConfig) {
+                if (customQuizConfig.timePerQuestion) {
+                    timePerQuestion = customQuizConfig.timePerQuestion;
+                }
+                if (customQuizConfig.totalTime > 0) {
+                    sessionStorage.setItem('examMode', 'custom');
+                    sessionStorage.setItem('examDuration', customQuizConfig.totalTime);
+                    sessionStorage.setItem('examStartTime', Date.now().toString());
+                }
+            }
 
             // Disable right-click on quiz questions
             const questionsContainer = document.getElementById('questionsContainer');
@@ -47,14 +81,20 @@
             const username = localStorage.getItem('username');
 
             document.getElementById('username').textContent = username || 'Guest';
-            document.getElementById('topicTitle').textContent = `${category} - ${topic}`;
+            
+            if (isCustomQuiz && customQuizConfig) {
+                document.getElementById('topicTitle').textContent = 'Custom Quiz';
+            } else {
+                document.getElementById('topicTitle').textContent = `${category} - ${topic}`;
+            }
             
             // Show mode indicator
             const modeText = {
                 'none': 'Practice Mode',
                 'quick': 'Quick Test (5 min)',
                 'standard': 'Standard Test (30 min)',
-                'exam': 'Exam Simulation (60 min)'
+                'exam': 'Exam Simulation (60 min)',
+                'custom': 'Custom Quiz'
             };
             if (mode !== 'none') {
                 const topicTitle = document.getElementById('topicTitle');
@@ -107,13 +147,46 @@
             const loadingSpinner = document.getElementById('loadingSpinner');
 
             try {
-                const response = await fetch(`${API_BASE_URL}/mcqs?topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`);
-                if (!response.ok) throw new Error(`Server error: ${response.status}`);
-                let questions = await response.json();
+                let questions = [];
                 
-                // Apply question limit if set
-                if (totalQuestionLimit > 0 && totalQuestionLimit < questions.length) {
+                if (customQuizConfig && customQuizConfig.subjects && customQuizConfig.subjects.length > 0) {
+                    // Custom quiz: load from multiple subjects/topics
+                    for (const subject of customQuizConfig.subjects) {
+                        if (subject.topics && subject.topics.length > 0) {
+                            for (const topicConfig of subject.topics) {
+                                try {
+                                    const response = await fetch(`${API_BASE_URL}/mcqs?topic=${encodeURIComponent(topicConfig.name)}&category=${encodeURIComponent(subject.name)}`);
+                                    if (response.ok) {
+                                        const topicQuestions = await response.json();
+                                        // Take only the requested count
+                                        const selectedQuestions = topicQuestions.slice(0, topicConfig.count);
+                                        selectedQuestions.forEach(q => {
+                                            q._customTopic = topicConfig.name;
+                                            q._customCategory = subject.name;
+                                        });
+                                        questions.push(...selectedQuestions);
+                                    }
+                                } catch (e) {
+                                    console.error(`Error loading questions for ${topicConfig.name}:`, e);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Normal quiz: load from single topic
+                    const response = await fetch(`${API_BASE_URL}/mcqs?topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`);
+                    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+                    questions = await response.json();
+                }
+                
+                // Apply question limit if set (for non-custom quiz)
+                if (totalQuestionLimit > 0 && totalQuestionLimit < questions.length && !customQuizConfig) {
                     questions = questions.slice(0, totalQuestionLimit);
+                }
+                
+                // Shuffle questions for custom quiz
+                if (customQuizConfig) {
+                    questions = shuffleArray(questions);
                 }
                 
                 quizData = questions;
@@ -501,6 +574,9 @@ setTimeout(() => {
             let score = 0;
             const answers = [];
             
+            let topicsUsed = [];
+            let categoriesUsed = [];
+            
             quizData.forEach((question, index) => {
                 const selectedOption = selectedAnswers[index];
                 answers.push(selectedOption);
@@ -508,11 +584,25 @@ setTimeout(() => {
                 if (selectedOption === parseInt(question.correctAnswer)) {
                     score++;
                 }
+                
+                // Collect topics for custom quiz
+                if (customQuizConfig && question._customTopic) {
+                    if (!topicsUsed.includes(question._customTopic)) {
+                        topicsUsed.push(question._customTopic);
+                    }
+                    if (!categoriesUsed.includes(question._customCategory)) {
+                        categoriesUsed.push(question._customCategory);
+                    }
+                }
             });
 
             const userId = localStorage.getItem('userId');
             const percentage = quizData.length > 0 ? (score / quizData.length) * 100 : 0;
             const timeTaken = getTimeTaken();
+
+            // For custom quiz, use the combined info
+            const finalTopic = customQuizConfig ? topicsUsed.join(', ') : topic;
+            const finalCategory = customQuizConfig ? categoriesUsed.join(', ') : category;
 
             try {
                 const response = await fetch(`${API_BASE_URL}/scores`, {
@@ -520,8 +610,8 @@ setTimeout(() => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         userId,
-                        topic,
-                        category,
+                        topic: finalTopic,
+                        category: finalCategory,
                         score,
                         totalQuestions: quizData.length,
                         percentage,
@@ -533,7 +623,7 @@ setTimeout(() => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    window.location.href = `results.html?scoreId=${data._id}&score=${data.score}&total=${data.totalQuestions}&percentage=${data.percentage.toFixed(2)}&topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`;
+                    window.location.href = `results.html?scoreId=${data._id}&score=${data.score}&total=${data.totalQuestions}&percentage=${data.percentage.toFixed(2)}&topic=${encodeURIComponent(finalTopic)}&category=${encodeURIComponent(finalCategory)}`;
                 } else {
                     alert('Failed to submit quiz');
                 }
