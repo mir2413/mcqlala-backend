@@ -1338,9 +1338,156 @@ window.toggleChildButtonsWrapper = function(e) {
                 args = [e];
             }
 
-            if (typeof window[funcName] === 'function') {
+if (typeof window[funcName] === 'function') {
                 window[funcName].apply(null, args);
             }
         }
     });
 });
+
+// === Toast Notification System ===
+window.showToast = function(message, type = 'info', duration = 4000) {
+    const container = document.querySelector('.toast-container') || createToastContainer();
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-times-circle',
+        info: 'fa-info-circle',
+        warning: 'fa-exclamation-triangle'
+    };
+    
+    toast.innerHTML = `
+        <i class="fa-solid ${icons[type] || icons.info}"></i>
+        <span class="toast-message">${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+    `;
+    
+    container.appendChild(toast);
+    
+    if (duration > 0) {
+        setTimeout(() => removeToast(toast), duration);
+    }
+};
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+    return container;
+}
+
+function removeToast(toast) {
+    toast.classList.add('toast-out');
+    setTimeout(() => toast.remove(), 300);
+}
+
+// === Session Timeout Warning ===
+let sessionCheckInterval;
+let sessionWarningShown = false;
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const WARNING_BEFORE = 2 * 60 * 1000; // 2 minutes before
+
+function checkSessionTimeout() {
+    const userId = localStorage.getItem('userId');
+    if (!userId) return;
+    
+    const lastActivity = localStorage.getItem('lastActivity');
+    if (!lastActivity) {
+        localStorage.setItem('lastActivity', Date.now().toString());
+        return;
+    }
+    
+    const elapsed = Date.now() - parseInt(lastActivity);
+    const timeLeft = SESSION_TIMEOUT - elapsed;
+    
+    if (elapsed >= SESSION_TIMEOUT) {
+        clearInterval(sessionCheckInterval);
+        logout();
+        return;
+    }
+    
+    if (timeLeft <= WARNING_BEFORE && !sessionWarningShown) {
+        sessionWarningShown = true;
+        showSessionWarning(timeLeft);
+    }
+}
+
+function showSessionWarning(timeLeft) {
+    const modal = document.createElement('div');
+    modal.className = 'session-modal';
+    modal.id = 'sessionWarningModal';
+    
+    let secondsLeft = Math.floor(timeLeft / 1000);
+    let countdown = setInterval(() => {
+        secondsLeft -= 1;
+        const countdownEl = modal.querySelector('.countdown');
+        if (countdownEl) {
+            countdownEl.textContent = secondsLeft;
+        }
+        if (secondsLeft <= 0) {
+            clearInterval(countdown);
+        }
+    }, 1000);
+    
+    modal.innerHTML = `
+        <div class="session-modal-content">
+            <h3><i class="fa-solid fa-clock" style="color: var(--primary); margin-right: 10px;"></i> Session Expiring</h3>
+            <p>Your session will expire in:</p>
+            <div class="countdown">${secondsLeft}</div>
+            <p>Click "Stay Logged In" to continue, or "Logout" to end your session.</p>
+            <div class="btn-group">
+                <button class="btn-primary" onclick="extendSession()"><i class="fa-solid fa-check"></i> Stay Logged In</button>
+                <button class="btn-secondary" onclick="logoutNow()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.classList.add('active');
+    
+    window.extendSession = function() {
+        clearInterval(countdown);
+        localStorage.setItem('lastActivity', Date.now().toString());
+        sessionWarningShown = false;
+        modal.remove();
+    };
+    
+    window.logoutNow = function() {
+        clearInterval(countdown);
+        modal.remove();
+        logout();
+    };
+}
+
+// Update last activity on user interaction
+document.addEventListener('click', () => {
+    if (localStorage.getItem('userId')) {
+        localStorage.setItem('lastActivity', Date.now().toString());
+    }
+});
+
+document.addEventListener('keypress', () => {
+    if (localStorage.getItem('userId')) {
+        localStorage.setItem('lastActivity', Date.now().toString());
+    }
+});
+
+// Start session check when user is logged in
+if (localStorage.getItem('userId')) {
+    localStorage.setItem('lastActivity', Date.now().toString());
+    sessionCheckInterval = setInterval(checkSessionTimeout, 10000); // Check every 10 seconds
+}
+
+// Replace alert() calls with toast notifications
+const originalAlert = window.alert;
+window.alert = function(msg) {
+    if (typeof msg === 'string' && msg.toLowerCase().includes('error')) {
+        showToast(msg, 'error');
+    } else if (typeof msg === 'string' && (msg.toLowerCase().includes('success') || msg.toLowerCase().includes('saved'))) {
+        showToast(msg, 'success');
+    } else {
+        showToast(msg, 'info');
+    }
+};
