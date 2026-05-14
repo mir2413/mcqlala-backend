@@ -307,6 +307,25 @@ body.light-mode .theme-toggle:hover {
     background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
+/* --- BROWSE HEADER --- */
+.browse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.browse-header .search-bar {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.browse-header .search-bar input {
+    width: 280px;
+}
+
 /* --- QUIZ SETUP CARD --- */
 .quiz-setup-card {
     background: var(--bg-card);
