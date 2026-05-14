@@ -806,19 +806,6 @@ window.startQuiz = function(topic, category) {
     window.location.href = `quiz.html?topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`;
 };
 
-window.toggleQuizSetup = function() {
-    const toggle = document.getElementById('quizSetupToggle');
-    const card = document.getElementById('quizSetupCard');
-    
-    if (card.style.display === 'none') {
-        card.style.display = 'block';
-        toggle.classList.add('active');
-    } else {
-        card.style.display = 'none';
-        toggle.classList.remove('active');
-    }
-};
-
 function makeDraggable(element) {
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     const header = element.querySelector('h3');

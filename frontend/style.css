@@ -296,6 +296,30 @@ body.light-mode .theme-toggle:hover {
 
 .quiz-setup-toggle #setupArrow {
     margin-left: auto;
+}
+
+.quiz-setup-toggle.active #setupArrow {
+    transform: none;
+}
+
+.quiz-setup-toggle.active {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* --- QUIZ SETUP CARD (hidden, only on setup.html) --- */
+.quiz-setup-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px;
+    margin: 30px auto;
+    max-width: 800px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    display: none;
+}
+
+.quiz-setup-toggle #setupArrow {
+    margin-left: auto;
     transition: transform 0.3s;
 }
 

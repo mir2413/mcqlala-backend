@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Setup - mcqlala</title>
+    <link rel="stylesheet" href="style.css?v=1774346226095">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0F172A">
+    <meta name="robots" content="noindex, nofollow">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand" id="navBrand">
+            <img src="favicon.svg?v=3" alt="MCQLala" class="logo-box">
+            <div class="brand-text">
+                <h1>mcqlala.in</h1>
+            </div>
+        </div>
+        <button class="theme-toggle" id="themeToggle" title="Toggle Dark/Light Mode">
+            <i class="fa-solid fa-moon"></i> <span class="theme-label">Dark</span>
+        </button>
+        <a href="index.html" class="btn-secondary" style="margin-left: auto; text-decoration: none; padding: 10px 20px; border-radius: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Home
+        </a>
+    </nav>
+
+    <div class="main-container">
+        <div class="quiz-setup-fullpage">
+            <h2 class="setup-page-title">
+                <i class="fa-solid fa-gear"></i> Configure Your Quiz
+            </h2>
+            
+            <div class="quiz-setup-card" id="quizSetupCard">
+                <div class="setup-row">
+                    <div class="setup-group">
+                        <label for="categorySelect"><i class="fa-solid fa-folder"></i> Category</label>
+                        <select id="categorySelect" name="category">
+                            <option value="">Select Category</option>
+                        </select>
+                    </div>
+                    <div class="setup-group">
+                        <label for="topicSelect"><i class="fa-solid fa-book"></i> Topic</label>
+                        <select id="topicSelect" name="topic">
+                            <option value="">Select Topic</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setup-row">
+                    <div class="setup-group">
+                        <label for="questionCount"><i class="fa-solid fa-list-ol"></i> Number of Questions</label>
+                        <select id="questionCount" name="questionCount">
+                            <option value="10">10 Questions</option>
+                            <option value="20">20 Questions</option>
+                            <option value="30">30 Questions</option>
+                            <option value="50">50 Questions</option>
+                            <option value="100">100 Questions</option>
+                            <option value="all">All Available</option>
+                        </select>
+                    </div>
+                    <div class="setup-group">
+                        <label for="examMode"><i class="fa-solid fa-clock"></i> Exam Mode</label>
+                        <select id="examMode" name="examMode">
+                            <option value="none">Practice Mode (No Timer)</option>
+                            <option value="quick">Quick Test (5 min)</option>
+                            <option value="standard" selected>Standard Test (30 min)</option>
+                            <option value="exam">Exam Simulation (60 min)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="setup-row">
+                    <div class="setup-group">
+                        <label for="timePerQuestion"><i class="fa-solid fa-stopwatch"></i> Time Per Question (sec)</label>
+                        <select id="timePerQuestion" name="timePerQuestion">
+                            <option value="0">No Limit</option>
+                            <option value="30">30 seconds</option>
+                            <option value="45">45 seconds</option>
+                            <option value="60">1 minute</option>
+                            <option value="90">1.5 minutes</option>
+                            <option value="120">2 minutes</option>
+                        </select>
+                    </div>
+                    <div class="setup-group start-btn-container">
+                        <button class="btn-primary btn-start" id="startQuizBtn">
+                            <i class="fa-solid fa-play"></i> Start Quiz
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .quiz-setup-fullpage {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .setup-page-title {
+            text-align: center;
+            color: var(--primary);
+            font-size: 28px;
+            margin-bottom: 30px;
+            font-weight: 800;
+        }
+        
+        .setup-page-title i {
+            margin-right: 10px;
+        }
+        
+        .quiz-setup-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .quiz-setup-card {
+                padding: 25px 20px;
+            }
+            
+            .setup-row {
+                flex-direction: column;
+            }
+            
+            .setup-page-title {
+                font-size: 22px;
+            }
+        }
+    </style>
+
+    <script src="app.js?v=1774360000000" defer></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', async () => {
+            const categorySelect = document.getElementById('categorySelect');
+            const topicSelect = document.getElementById('topicSelect');
+            
+            // Load categories from API
+            try {
+                const response = await fetch('/api/categories');
+                if (response.ok) {
+                    const categories = await response.json();
+                    categorySelect.innerHTML = '<option value="">Select Category</option>';
+                    categories.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat;
+                        option.textContent = cat;
+                        categorySelect.appendChild(option);
+                    });
+                }
+            } catch (e) {
+                console.error('Error loading categories:', e);
+            }
+            
+            // Load topics when category is selected
+            categorySelect.addEventListener('change', async () => {
+                if (!categorySelect.value) {
+                    topicSelect.innerHTML = '<option value="">Select Topic</option>';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/api/subjects?category=${encodeURIComponent(categorySelect.value)}`);
+                    if (response.ok) {
+                        const subjects = await response.json();
+                        topicSelect.innerHTML = '<option value="">Select Topic</option>';
+                        
+                        const matchingSubject = subjects.find(s => s.name === categorySelect.value);
+                        if (matchingSubject && matchingSubject.topics) {
+                            matchingSubject.topics.forEach(topic => {
+                                const option = document.createElement('option');
+                                option.value = topic.name || topic;
+                                option.textContent = topic.name || topic;
+                                topicSelect.appendChild(option);
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error loading topics:', e);
+                }
+            });
+            
+            // Start quiz button
+            document.getElementById('startQuizBtn').addEventListener('click', () => {
+                const category = categorySelect.value;
+                const topic = topicSelect.value;
+                const questionCount = document.getElementById('questionCount').value;
+                const examMode = document.getElementById('examMode').value;
+                const timePerQuestion = document.getElementById('timePerQuestion').value;
+                
+                if (!category || !topic) {
+                    showToast('Please select both Category and Topic', 'warning');
+                    return;
+                }
+                
+                let url = `quiz.html?topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`;
+                
+                if (examMode !== 'none') {
+                    url += `&mode=${examMode}`;
+                }
+                
+                if (questionCount !== 'all') {
+                    url += `&limit=${questionCount}`;
+                }
+                
+                if (timePerQuestion !== '0') {
+                    url += `&timePerQ=${timePerQuestion}`;
+                }
+                
+                window.location.href = url;
+            });
+        });
+    </script>
+</body>
+</html>
