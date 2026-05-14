@@ -1,88 +1,32 @@
-// Check if user is logged in
-window.addEventListener('DOMContentLoaded', async () => {
-    // checkAuth is handled by app.js
-    if (typeof loadNavLinks === 'function') {
-        loadNavLinks();
-    }
-    const user = getCurrentUser ? getCurrentUser() : { username: null, userId: null };
-    const isLoggedIn = user.username && user.userId;
-    const userProfile = document.getElementById('userProfile');
-    const loginBtn = document.getElementById('loginBtn');
-
-    if (isLoggedIn) {
-        if (userProfile) userProfile.style.display = 'flex';
-        if (loginBtn) loginBtn.style.display = 'none';
-        document.getElementById('username').textContent = user.username;
-        const isAdmin = localStorage.getItem('isAdmin') === 'true';
-
-        // Show Admin Button ONLY for admin users
-        if (isAdmin) {
-            const adminBtn = document.createElement('button');
-            adminBtn.className = 'btn-secondary admin-btn';
-            adminBtn.style.backgroundColor = '#4ecdc4';
-            adminBtn.style.marginRight = '10px';
-            adminBtn.textContent = 'Admin Panel';
-            adminBtn.onclick = () => window.location.href = 'admin.html';
-            const logoutBtn = document.querySelector('#userProfile .logout-btn');
-            if (logoutBtn) {
-                document.getElementById('userProfile').insertBefore(adminBtn, logoutBtn);
-            }
-        }
-    } else {
-        if (userProfile) userProfile.style.display = 'none';
-        if (loginBtn) loginBtn.style.display = 'flex';
-    }
-    
-    // Load subjects for all users (logged in or not)
+window.addEventListener('DOMContentLoaded', async function() {
+    // Load subjects
     await loadSubjectsAndRender();
     
-    const categorySelect = document.getElementById('categorySelect');
+    // Setup category change listener
+    var categorySelect = document.getElementById('categorySelect');
     if (categorySelect) {
         categorySelect.addEventListener('change', loadTopicsForFilter);
     }
 });
 
-function escapeJs(str) {
-    if (str === null || str === undefined) return '';
-    return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
-}
-
 function escapeHtml(text) {
     if (typeof text !== 'string') return text || '';
     return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function escapeAttr(str) {
-    if (str === null || str === undefined) return '';
-    return String(str).replace(/"/g, "&quot;");
-}
-
-function toggleChildButtons_unused(card) {
-    const childButtons = card.querySelector('.child-buttons');
-    const icon = card.querySelector('.expand-icon');
-    
-    if (childButtons.style.display === 'none' || childButtons.style.display === '') {
-        childButtons.style.display = 'block';
-        icon.classList.remove('fa-chevron-down');
-        icon.classList.add('fa-chevron-up');
-    } else {
-        childButtons.style.display = 'none';
-        icon.classList.remove('fa-chevron-up');
-        icon.classList.add('fa-chevron-down');
-    }
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 async function loadSubjectsAndRender() {
-    const grid = document.getElementById('cardGrid');
+    var grid = document.getElementById('cardGrid');
+    if (!grid) return;
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/subjects`);
+        var response = await fetch(API_BASE_URL + '/subjects');
         if (!response.ok) throw new Error('Failed to fetch subjects');
-        const subjects = await response.json();
+        var subjects = await response.json();
         cachedSubjects = subjects;
 
         if (subjects.length === 0) {
@@ -90,52 +34,59 @@ async function loadSubjectsAndRender() {
             return subjects;
         }
 
-        grid.innerHTML = subjects.map(subject => `
-            <div class="card">
-                <div class="card-info" data-href="subject.html?subject=${encodeURIComponent(subject.name)}" data-target="_blank">
-                    <div class="card-title">${escapeHtml(subject.name)}</div>
-                    <div class="card-meta">${escapeHtml(subject.description || '')} ${subject.topics && subject.topics.length > 0 ? `<span style="color:#667eea; font-size:12px;">(${subject.topics.length} topics)</span>` : ''}</div>
-                </div>
-            </div>
-        `).join('');
+        var html = '';
+        for (var i = 0; i < subjects.length; i++) {
+            var subject = subjects[i];
+            var topicCount = subject.topics && subject.topics.length > 0 ? subject.topics.length : 0;
+            html += '<div class="card">';
+            html += '<div class="card-info" data-href="subject.html?subject=' + encodeURIComponent(subject.name) + '" data-target="_blank">';
+            html += '<div class="card-title">' + escapeHtml(subject.name) + '</div>';
+            html += '<div class="card-meta">' + escapeHtml(subject.description || '') + ' <span style="color:#667eea; font-size:12px;">(' + topicCount + ' topics)</span></div>';
+            html += '</div></div>';
+        }
+        grid.innerHTML = html;
 
         populateDropdowns(subjects);
         return subjects;
     } catch (error) {
         console.error('Error loading subjects:', error);
-        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: red;">Failed to load subjects. Please check API connection.</div>`;
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: red;">Failed to load subjects. Please check API connection.</div>';
         return [];
     }
 }
 
 function populateDropdowns(subjects) {
-    const categorySelect = document.getElementById('categorySelect');
+    var categorySelect = document.getElementById('categorySelect');
     if (!categorySelect) return;
     
-    categorySelect.innerHTML = '<option value="">Select Category</option>';
-    
-    subjects.forEach(subject => {
-        const option = new Option(subject.name, subject.name);
-        categorySelect.appendChild(option);
-    });
+    var options = '<option value="">Select Category</option>';
+    for (var i = 0; i < subjects.length; i++) {
+        options += '<option value="' + subjects[i].name + '">' + subjects[i].name + '</option>';
+    }
+    categorySelect.innerHTML = options;
 }
 
-let cachedSubjects = [];
+var cachedSubjects = [];
 
 function loadTopicsForFilter() {
-    const selectedCategory = document.getElementById('categorySelect').value;
-    const topicSelect = document.getElementById('topicSelect');
+    var selectedCategory = document.getElementById('categorySelect').value;
+    var topicSelect = document.getElementById('topicSelect');
     if (!topicSelect) return;
     
     topicSelect.innerHTML = '<option value="">Select Topic</option>';
 
     if (!selectedCategory) return;
 
-    const subject = cachedSubjects.find(s => s.name === selectedCategory);
-    if (subject && subject.topics) {
-        subject.topics.forEach(topic => {
-            const option = new Option(topic.name, topic.name);
-            topicSelect.appendChild(option);
-        });
+    for (var i = 0; i < cachedSubjects.length; i++) {
+        if (cachedSubjects[i].name === selectedCategory && cachedSubjects[i].topics) {
+            for (var j = 0; j < cachedSubjects[i].topics.length; j++) {
+                var topicName = cachedSubjects[i].topics[j].name || cachedSubjects[i].topics[j];
+                var option = document.createElement('option');
+                option.value = topicName;
+                option.textContent = topicName;
+                topicSelect.appendChild(option);
+            }
+            break;
+        }
     }
 }
