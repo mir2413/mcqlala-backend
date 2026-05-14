@@ -1,8 +1,3 @@
-// Define API_BASE_URL if not already defined (app.js may define it)
-if (typeof API_BASE_URL === 'undefined') {
-    var API_BASE_URL = '/api';
-}
-
 window.addEventListener('DOMContentLoaded', async function() {
     // Load subjects
     await loadSubjectsAndRender();
