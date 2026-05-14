@@ -41,19 +41,27 @@ window.addEventListener('DOMContentLoaded', () => {
             
             if (savedConfig) {
                 // Retake custom quiz with same settings
-                sessionStorage.setItem('customQuizConfig', savedConfig);
-                window.location.href = 'quiz.html?custom=true';
-            } else {
-                // Regular quiz - use URL params
-                const params = new URLSearchParams(window.location.search);
-                const topic = params.get('topic') || 'General Knowledge';
-                const category = params.get('category') || 'General';
-                window.location.href = `quiz.html?topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`;
+                try {
+                    const config = JSON.parse(savedConfig);
+                    if (config && config.isCustomQuiz) {
+                        sessionStorage.setItem('customQuizConfig', savedConfig);
+                        // Redirect without topic/category params - let quiz page read from config
+                        window.location.href = 'quiz.html?custom=true';
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Error parsing config:', e);
+                }
             }
+            
+            // Regular quiz - use URL params
+            const params = new URLSearchParams(window.location.search);
+            const topic = params.get('topic') || 'General Knowledge';
+            const category = params.get('category') || 'General';
+            window.location.href = `quiz.html?topic=${encodeURIComponent(topic)}&category=${encodeURIComponent(category)}`;
         }
 
         function goHome() {
-            // Clear last quiz config when going home
-            sessionStorage.removeItem('lastQuizConfig');
+            // Don't clear lastQuizConfig - user might want to retake quiz later
             window.location.href = 'index.html';
         }

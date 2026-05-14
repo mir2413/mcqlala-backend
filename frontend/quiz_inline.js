@@ -44,8 +44,28 @@
                 // Load custom quiz configuration from sessionStorage
                 const configStr = sessionStorage.getItem('customQuizConfig');
                 if (configStr) {
-                    customQuizConfig = JSON.parse(configStr);
-                    console.log('Custom quiz config loaded:', customQuizConfig);
+                    try {
+                        customQuizConfig = JSON.parse(configStr);
+                        console.log('Custom quiz config loaded:', customQuizConfig);
+                    } catch (e) {
+                        console.error('Error parsing config:', e);
+                        customQuizConfig = null;
+                    }
+                }
+                
+                // If still no config, try lastQuizConfig
+                if (!customQuizConfig) {
+                    const lastConfigStr = sessionStorage.getItem('lastQuizConfig');
+                    if (lastConfigStr) {
+                        try {
+                            customQuizConfig = JSON.parse(lastConfigStr);
+                            // Restore to customQuizConfig for retake
+                            sessionStorage.setItem('customQuizConfig', lastConfigStr);
+                            console.log('Restored from lastQuizConfig:', customQuizConfig);
+                        } catch (e) {
+                            console.error('Error parsing lastConfig:', e);
+                        }
+                    }
                 }
             }
             
