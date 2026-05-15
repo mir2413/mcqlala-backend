@@ -1082,6 +1082,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update UI based on login status
     const userId = localStorage.getItem('userId');
     const username = localStorage.getItem('username');
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
     const userProfile = document.getElementById('userProfile');
     const loginBtn = document.getElementById('loginBtn');
     const usernameDisplay = document.getElementById('username');
@@ -1091,6 +1092,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (userProfile) userProfile.style.display = 'flex';
         if (loginBtn) loginBtn.style.display = 'none';
         if (usernameDisplay) usernameDisplay.textContent = username;
+        
+        // Add admin button for admin users
+        if (isAdmin && !document.getElementById('adminPanelBtn')) {
+            const adminBtn = document.createElement('a');
+            adminBtn.id = 'adminPanelBtn';
+            adminBtn.href = 'admin.html';
+            adminBtn.className = 'admin-panel-btn';
+            adminBtn.innerHTML = '<i class="fa-solid fa-gear"></i> Admin';
+            adminBtn.style.cssText = 'margin-left: 10px; padding: 8px 15px; background: #667eea; color: white; border-radius: 4px; text-decoration: none; font-size: 14px;';
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn && logoutBtn.parentElement) {
+                logoutBtn.parentElement.insertBefore(adminBtn, logoutBtn);
+            }
+        }
     } else {
         // User is not logged in - hide profile, show login button
         if (userProfile) userProfile.style.display = 'none';
