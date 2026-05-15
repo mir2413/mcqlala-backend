@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mcqlala-v3';
+const CACHE_NAME = 'mcqlala-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
