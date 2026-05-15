@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mcqlala-v5';
+const CACHE_NAME = 'mcqlala-v6';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -12,7 +12,7 @@ const STATIC_ASSETS = [
   '/manifest.json'
 ];
 
-const API_CACHE_NAME = 'mcqlala-api-v4';
+const API_CACHE_NAME = 'mcqlala-api-v5';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -31,7 +31,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames
           .filter((name) => name !== CACHE_NAME && name !== API_CACHE_NAME)
-          .map((name) => caches.delete(name))
+          .map((name) => caches.delete(name));
       );
     }).then(() => self.clients.claim())
   );
@@ -49,40 +49,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle static assets with cache-first strategy
+  // Use NETWORK-FIRST strategy - always try network first, then cache
   event.respondWith(
-    caches.match(request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
+    fetch(request)
+      .then((response) => {
+        // Clone and cache the response
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => {
+              cache.put(request, responseToCache);
+            });
         }
-
-        return fetch(request)
-          .then((response) => {
-            // Don't cache bad responses or non-successful responses
-            if (!response || response.status !== 200) {
-              return response;
+        return response;
+      })
+      .catch(() => {
+        // If network fails, try cache
+        return caches.match(request)
+          .then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
             }
-
-            // Don't cache opaque responses (like from different origin)
-            if (response.type === 'opaque') {
-              return response;
-            }
-
-            // Clone the response before caching
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(request, responseToCache);
-              })
-              .catch((err) => {
-                console.log('Cache put failed:', err);
-              });
-
-            return response;
-          })
-          .catch(() => {
-            // Return offline page for navigation requests
+            // If nothing in cache, return offline page
             if (request.destination === 'document') {
               return caches.match('/index.html');
             }
