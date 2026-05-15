@@ -2,7 +2,7 @@
 const API_BASE_URL = '/api';
 
 // Cache version - increment this when you make major changes
-const CACHE_VERSION = 'v5.0';
+const CACHE_VERSION = 'v6.0';
 
 (function() {
     const storedVersion = localStorage.getItem('cacheVersion');
@@ -40,6 +40,14 @@ const CACHE_VERSION = 'v5.0';
                 names.forEach(name => caches.delete(name));
             });
         }
+        
+        // Force service worker to update
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+        }
+        
+        // Reload page to get fresh content
+        setTimeout(() => window.location.reload(true), 100);
     }
 })();
 

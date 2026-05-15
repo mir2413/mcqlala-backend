@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mcqlala-v4';
+const CACHE_NAME = 'mcqlala-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -12,7 +12,7 @@ const STATIC_ASSETS = [
   '/manifest.json'
 ];
 
-const API_CACHE_NAME = 'mcqlala-api-v3';
+const API_CACHE_NAME = 'mcqlala-api-v4';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
