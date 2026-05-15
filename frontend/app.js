@@ -1,15 +1,25 @@
 // API Base URL - uses relative path (Vercel proxies to backend)
 const API_BASE_URL = '/api';
 
-// Cache version - increment this when you make major changes
-const CACHE_VERSION = 'v6.0';
+// Cache version - get from script tag URL parameter
+function getCacheVersion() {
+    const scripts = document.querySelectorAll('script[src*="app.js"]');
+    for (let script of scripts) {
+        const match = script.src.match(/app\.js\?v=(\d+)/);
+        if (match) return match[1];
+    }
+    return null;
+}
 
 (function() {
+    const currentVersion = getCacheVersion();
     const storedVersion = localStorage.getItem('cacheVersion');
-    if (storedVersion !== CACHE_VERSION) {
-        console.log('New version detected, clearing old cache...');
+    
+    // First visit or version changed - clear everything
+    if (!storedVersion || currentVersion !== storedVersion) {
+        console.log('Cache version changed, clearing...');
         
-        // Save user data before clearing (preserve login state)
+        // Save user data before clearing
         const savedUser = {
             userId: localStorage.getItem('userId'),
             username: localStorage.getItem('username'),
@@ -17,10 +27,11 @@ const CACHE_VERSION = 'v6.0';
             isAdmin: localStorage.getItem('isAdmin')
         };
         
-        // Clear old cache
+        // Clear all storage
         localStorage.clear();
+        sessionStorage.clear();
         
-        // Restore user data if user was logged in
+        // Restore user data
         if (savedUser.userId) {
             localStorage.setItem('userId', savedUser.userId);
             localStorage.setItem('username', savedUser.username);
@@ -29,25 +40,17 @@ const CACHE_VERSION = 'v6.0';
         }
         
         // Set new version
-        localStorage.setItem('cacheVersion', CACHE_VERSION);
+        localStorage.setItem('cacheVersion', currentVersion);
         
-        // Clear session storage too
-        sessionStorage.clear();
-        
-        // Clear service worker cache
+        // Clear service worker caches
         if ('caches' in window) {
             caches.keys().then(names => {
                 names.forEach(name => caches.delete(name));
             });
         }
         
-        // Force service worker to update
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
-        }
-        
-        // Reload page to get fresh content
-        setTimeout(() => window.location.reload(true), 100);
+        // Reload to get fresh content
+        window.location.reload(true);
     }
 })();
 
