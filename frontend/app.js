@@ -9,8 +9,24 @@ const CACHE_VERSION = 'v5.0';
     if (storedVersion !== CACHE_VERSION) {
         console.log('New version detected, clearing old cache...');
         
+        // Save user data before clearing (preserve login state)
+        const savedUser = {
+            userId: localStorage.getItem('userId'),
+            username: localStorage.getItem('username'),
+            email: localStorage.getItem('email'),
+            isAdmin: localStorage.getItem('isAdmin')
+        };
+        
         // Clear old cache
         localStorage.clear();
+        
+        // Restore user data if user was logged in
+        if (savedUser.userId) {
+            localStorage.setItem('userId', savedUser.userId);
+            localStorage.setItem('username', savedUser.username);
+            localStorage.setItem('email', savedUser.email);
+            localStorage.setItem('isAdmin', savedUser.isAdmin);
+        }
         
         // Set new version
         localStorage.setItem('cacheVersion', CACHE_VERSION);
