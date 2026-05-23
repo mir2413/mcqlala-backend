@@ -693,15 +693,17 @@
                                 <input type="text" id="topic-input-${subject._id}" placeholder="New Topic Name" style="padding: 5px; border: 1px solid #ddd; border-radius: 4px; flex: 1;">
                                 <button data-onclick="addTopic" data-args="['${subject._id}']" class="btn-secondary" style="padding: 5px 10px; font-size: 12px;">Add Topic</button>
                             </div>
-                            ${subject.topics && subject.topics.length > 0 ? subject.topics.map(topic => `
-                                <div class="topic-item" id="topic-item-${topic._id || topic.name}">
+                            ${subject.topics && subject.topics.length > 0 ? subject.topics.map(topic => {
+                                const topicIdentifier = topic._id || encodeURIComponent(topic.name);
+                                return `
+                                <div class="topic-item" id="topic-item-${topicIdentifier}">
                                     <span class="topic-name">${escapeHtml(topic.name)}</span>
                                     <div>
-                                        <button data-onclick="enableEditTopic" data-args="['${subject._id}', '${topic._id || topic.name}']" style="color: #4ecdc4; background: none; border: none; cursor: pointer; margin-right: 5px;"><i class="fa-solid fa-pen"></i></button>
-                                        <button data-onclick="deleteTopic" data-args="['${subject._id}', '${topic._id || topic.name}']" style="color: #ff6b6b; background: none; border: none; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
+                                        <button data-onclick="enableEditTopic" data-args="['${subject._id}', '${topicIdentifier}']" style="color: #4ecdc4; background: none; border: none; cursor: pointer; margin-right: 5px;"><i class="fa-solid fa-pen"></i></button>
+                                        <button data-onclick="deleteTopic" data-args="['${subject._id}', '${topicIdentifier}']" style="color: #ff6b6b; background: none; border: none; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
                                     </div>
                                 </div>
-                            `).join('') : '<div style="color: #999; font-size: 0.9em; font-style: italic;">No topics yet</div>'}
+                            `}).join('') : '<div style="color: #999; font-size: 0.9em; font-style: italic;">No topics yet</div>'}
                         </div>
                     </div>
                 `).join('');
@@ -819,9 +821,11 @@
                 setTimeout(() => window.location.href = 'login.html', 2000);
                 return;
             }
-            console.log('Deleting topic:', subjectId, topicId, 'user:', user.userId);
+            // Decode if it was URI-encoded in data-args (for topic names with special chars)
+            const decodedTopicId = decodeURIComponent(topicId);
+            console.log('Deleting topic:', subjectId, topicId, 'decoded:', decodedTopicId, 'user:', user.userId);
             try {
-                const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${encodeURIComponent(topicId)}`, { 
+                const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${encodeURIComponent(decodedTopicId)}`, { 
                     method: 'DELETE'
                 });
                 console.log('Delete response:', response.status, response.statusText);
@@ -854,12 +858,13 @@
         }
 
         async function saveEditTopic(subjectId, topicId) {
+            const decodedTopicId = decodeURIComponent(topicId);
             const input = document.getElementById(`edit-topic-input-${topicId}`);
             const name = input.value;
             if (!name) return;
 
             try {
-                const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${encodeURIComponent(topicId)}`, {
+                const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${encodeURIComponent(decodedTopicId)}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name })

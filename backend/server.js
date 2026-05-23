@@ -130,6 +130,65 @@ const Badge = mongoose.models.Badge || mongoose.model('Badge', badgeSchema);
 
 let isDbConnected = false;
 
+/**
+ * One-time migration: fix existing data where the old sanitizer
+ * stored HTML entities (&amp; → &, etc.) inside topic names and MCQs
+ */
+async function fixLegacyEntityEncoding() {
+    try {
+        // Fix subject topic names
+        const subjects = await Subject.find({});
+        let fixedSubjects = 0;
+        for (const subject of subjects) {
+            let changed = false;
+            subject.topics = subject.topics.map(t => {
+                if (typeof t === 'object' && t.name) {
+                    const decoded = unescapeEntity(t.name);
+                    if (decoded !== t.name) {
+                        changed = true;
+                        t.name = decoded;
+                    }
+                }
+                return t;
+            });
+            if (changed) {
+                await subject.save();
+                fixedSubjects++;
+            }
+        }
+        if (fixedSubjects > 0) {
+            console.log(`[MIGRATION] Fixed ${fixedSubjects} subject(s) with encoded entity characters`);
+        }
+
+        // Fix MCQ questions, categories, topics, explanations
+        const mcqs = await MCQ.find({
+            $or: [
+                { question: /&amp;|&lt;|&gt;|&quot;|&#x27;|&#39;/ },
+                { category: /&amp;|&lt;|&gt;|&quot;|&#x27;|&#39;/ },
+                { topic: /&amp;|&lt;|&gt;|&quot;|&#x27;|&#39;/ },
+                { explanation: /&amp;|&lt;|&gt;|&quot;|&#x27;|&#39;/ }
+            ]
+        });
+        let fixedMCQs = 0;
+        for (const mcq of mcqs) {
+            let changed = false;
+            if (mcq.question) { const d = unescapeEntity(mcq.question); if (d !== mcq.question) { mcq.question = d; changed = true; } }
+            if (mcq.category) { const d = unescapeEntity(mcq.category); if (d !== mcq.category) { mcq.category = d; changed = true; } }
+            if (mcq.topic) { const d = unescapeEntity(mcq.topic); if (d !== mcq.topic) { mcq.topic = d; changed = true; } }
+            if (mcq.explanation) { const d = unescapeEntity(mcq.explanation); if (d !== mcq.explanation) { mcq.explanation = d; changed = true; } }
+            if (changed) {
+                await mcq.save();
+                fixedMCQs++;
+            }
+        }
+        if (fixedMCQs > 0) {
+            console.log(`[MIGRATION] Fixed ${fixedMCQs} MCQ(s) with encoded entity characters`);
+        }
+    } catch (err) {
+        console.warn('[MIGRATION] Non-critical error during legacy data fix:', err.message);
+    }
+}
+
 // Connect to MongoDB
 async function connectDB() {
     if (!MONGODB_URI) {
@@ -150,6 +209,9 @@ async function connectDB() {
                 topics: [{ name: 'History' }, { name: 'Geography' }]
             });
         }
+        
+        // Migrate legacy data that was HTML-entity-encoded by the old sanitizer
+        await fixLegacyEntityEncoding();
     } catch (err) {
         console.error('❌ MongoDB connection error:', err.message);
     }
@@ -356,20 +418,17 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Input Sanitization Middleware - Prevents XSS attacks by sanitizing user input
 // Only sanitize body data, not query parameters (they're used for filtering)
+// Note: HTML entity encoding is NOT done here — it would corrupt data in DB.
+// Frontend's escapeHtml() handles encoding at display time.
 const sanitizeInput = (req, res, next) => {
     const sanitize = (obj) => {
         if (typeof obj !== 'object' || obj === null) return obj;
         
         for (const key in obj) {
             if (typeof obj[key] === 'string') {
-                // Remove HTML tags and encode special characters
+                // Strip HTML tags to prevent XSS, but keep special characters raw
                 obj[key] = obj[key]
-                    .replace(/<[^>]*>/g, '') // Remove HTML tags
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#x27;')
+                    .replace(/<[^>]*>/g, '')
                     .trim();
             } else if (typeof obj[key] === 'object') {
                 sanitize(obj[key]);
@@ -624,17 +683,71 @@ app.put('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, res) 
     }
 });
 
+/**
+ * Unescapes common HTML entities that may have been stored in legacy data
+ */
+function unescapeEntity(name) {
+    if (!name || typeof name !== 'string') return '';
+    return name
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#x27;/g, "'")
+        .replace(/&#39;/g, "'");
+}
+
+/**
+ * Normalizes topic name for consistent comparison
+ * Handles whitespace, Unicode encoding, and special characters
+ */
+function normalizeTopicName(name) {
+    if (!name || typeof name !== 'string') return '';
+    return name.trim().replace(/\s+/g, ' ').normalize('NFC');
+}
+
 app.delete('/api/subjects/:subjectId/topics/:topicId', adminAuth, async (req, res) => {
     if (!isDbConnected) return res.status(503).json({ message: 'Database not connected' });
     try {
         const subject = await Subject.findById(req.params.subjectId);
         if (!subject) return res.status(404).json({ message: 'Subject not found' });
         const topicId = req.params.topicId.trim();
+        
+        // Defensive decoding - handle malformed encoded strings
+        let decodedTopicId = topicId;
+        try {
+            decodedTopicId = decodeURIComponent(topicId);
+        } catch (e) {
+            console.error('Failed to decode topicId:', e);
+            // Continue with original topicId
+        }
+        
+        const normalizedTopicId = normalizeTopicName(decodedTopicId);
+        if (!normalizedTopicId) {
+            return res.status(400).json({ error: 'Invalid topic identifier' });
+        }
+        
+        if (process.env.NODE_ENV === 'development') {
+            console.log('DELETE topic request:', {
+                raw: req.params.topicId,
+                decoded: decodedTopicId,
+                normalized: normalizedTopicId,
+                existingTopics: subject.topics.map(t => typeof t === 'string' ? t : t.name)
+            });
+        }
+        
         const originalLength = subject.topics.length;
         subject.topics = subject.topics.filter(t => {
-            if (typeof t === 'string') return t.trim() !== topicId;
+            if (typeof t === 'string') {
+                // Compare against both raw and unescaped versions (legacy data support)
+                const name = normalizeTopicName(t);
+                const unescaped = normalizeTopicName(unescapeEntity(t));
+                return name !== normalizedTopicId && unescaped !== normalizedTopicId;
+            }
             const matchesId = t._id && t._id.toString() === topicId;
-            const matchesName = t.name && t.name.trim() === topicId;
+            const rawName = t.name && normalizeTopicName(t.name);
+            const unescapedName = t.name && normalizeTopicName(unescapeEntity(t.name));
+            const matchesName = rawName === normalizedTopicId || unescapedName === normalizedTopicId;
             return !matchesId && !matchesName;
         });
         await subject.save();
@@ -1116,7 +1229,20 @@ app.post('/api/users/login', loginLimiter, async (req, res) => {
         }
         
         // Compare password with hashed password
-        const isMatch = await bcryptjs.compare(password, user.password);
+        let isMatch = await bcryptjs.compare(password, user.password);
+        
+        if (!isMatch) {
+            // Fallback: try legacy HTML-entity-encoded version (old sanitizer encoded &, <, >, etc.)
+            const legacyPassword = password
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#x27;');
+            if (legacyPassword !== password) {
+                isMatch = await bcryptjs.compare(legacyPassword, user.password);
+            }
+        }
         
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid credentials.' });
