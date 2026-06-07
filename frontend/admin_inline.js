@@ -208,18 +208,11 @@
                     <p><strong>Difficulty:</strong> <span style="color: ${mcq.difficulty === 'easy' ? '#21cc12' : mcq.difficulty === 'medium' ? '#ff9800' : '#ff6b6b'}">${escapeHtml(mcq.difficulty)}</span></p>
                     <p><strong>Options:</strong> ${mcq.options.length}</p>
                     <div class="mcq-item-actions">
-                        <button type="button" class="edit-btn" data-onclick="editMCQ" data-args="['${mcq._id}']" title="Edit"><i class="fa-solid fa-edit"></i> Edit</button>
+                        <button type="button" class="edit-btn" onclick="opencode_editMCQ('${mcq._id}')" title="Edit"><i class="fa-solid fa-edit"></i> Edit</button>
                         <button type="button" class="delete-btn" data-onclick="confirmDeleteMCQ" data-args="['${mcq._id}']" title="Delete"><i class="fa-solid fa-trash"></i> Delete</button>
                     </div>
                 </li>
             `).join('');
-            mcqList.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const id = this.getAttribute('data-args').replace(/[\[\]'"]/g, '');
-                    window.editMCQ(id);
-                });
-            });
         }
 
         function applyFilters() {
@@ -493,6 +486,7 @@
                 showError('Error loading MCQ: ' + error.message);
             }
         };
+        window.opencode_editMCQ = window.editMCQ;
 
         function cancelEdit() {
             document.getElementById('addMCQForm').reset();
