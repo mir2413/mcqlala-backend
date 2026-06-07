@@ -416,21 +416,26 @@
         }
 
         window.editMCQ = async function(id) {
-            alert('editMCQ called: ' + id);
+            alert('1: started');
             try {
                 const response = await fetch(`${API_BASE_URL}/mcqs/${id}`);
+                alert('2: fetched, status=' + response.status);
                 if (!response.ok) throw new Error('Failed to fetch MCQ');
                 const mcq = await response.json();
+                alert('3: mcq question=' + mcq.question);
 
                 const tabBtn = document.querySelector('.tab-btn[data-tab="add-mcq"]');
+                alert('4: tabBtn=' + (tabBtn ? 'found' : 'null'));
                 if (tabBtn) {
                     const event = { target: tabBtn };
                     switchTab(event, 'add-mcq');
                 }
+                alert('5: after switchTab');
                 const headingEl = document.getElementById('add-mcq').querySelector('h3');
                 if (headingEl) headingEl.textContent = 'Edit MCQ Question';
 
                 const catSelect = document.getElementById('category');
+                alert('6: catSelect=' + (catSelect ? 'found' : 'null'));
                 if (catSelect) {
                     const catOnchange = catSelect.getAttribute('data-onchange');
                     catSelect.removeAttribute('data-onchange');
@@ -453,9 +458,11 @@
                 }
 
                 const questionEl = document.getElementById('question');
+                alert('7: questionEl=' + (questionEl ? 'found' : 'null'));
                 if (questionEl) questionEl.value = mcq.question || '';
 
                 const optionsContainer = document.getElementById('optionsContainer');
+                alert('8: optionsContainer=' + (optionsContainer ? 'found' : 'null'));
                 if (optionsContainer) {
                     optionsContainer.innerHTML = '';
                     mcq.options.forEach((opt, i) => {
@@ -467,17 +474,16 @@
                     });
                 }
 
-                const correctAnswerEl = document.getElementById('correctAnswer');
-                if (correctAnswerEl) correctAnswerEl.value = mcq.correctAnswer;
-                const difficultyEl = document.getElementById('difficulty');
-                if (difficultyEl) difficultyEl.value = mcq.difficulty || 'easy';
-                const explanationEl = document.getElementById('explanation');
-                if (explanationEl) explanationEl.value = mcq.explanation || '';
+                document.getElementById('correctAnswer').value = mcq.correctAnswer;
+                document.getElementById('difficulty').value = mcq.difficulty || 'easy';
+                document.getElementById('explanation').value = mcq.explanation || '';
+                alert('9: form populated');
 
                 editingId = id;
 
                 const submitBtn = document.getElementById('submitMCQBtn');
                 if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Update MCQ';
+                alert('10: button text changed');
 
                 let cancelBtn = document.getElementById('cancelEditBtn');
                 if (!cancelBtn) {
@@ -493,11 +499,14 @@
                     }
                 }
                 if (cancelBtn) cancelBtn.style.display = 'block';
+                alert('11: cancel btn shown');
 
                 const addMcqEl = document.getElementById('add-mcq');
                 if (addMcqEl) addMcqEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                alert('12: done');
             } catch (error) {
-                try { showError('Error loading MCQ: ' + error.message); } catch(e) { alert('Error: ' + error.message); }
+                alert('ERROR: ' + error.message);
+                try { showError('Error loading MCQ: ' + error.message); } catch(e) { alert('showError also failed: ' + e.message); }
             }
         };
 
