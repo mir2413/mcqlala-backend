@@ -208,7 +208,7 @@
                     <p><strong>Difficulty:</strong> <span style="color: ${mcq.difficulty === 'easy' ? '#21cc12' : mcq.difficulty === 'medium' ? '#ff9800' : '#ff6b6b'}">${escapeHtml(mcq.difficulty)}</span></p>
                     <p><strong>Options:</strong> ${mcq.options.length}</p>
                     <div class="mcq-item-actions">
-                        <button type="button" class="edit-btn" onclick="opencode_editMCQ('${mcq._id}')" title="Edit"><i class="fa-solid fa-edit"></i> Edit</button>
+                        <button type="button" class="edit-btn" data-onclick="editMCQ" data-args="['${mcq._id}']" title="Edit"><i class="fa-solid fa-edit"></i> Edit</button>
                         <button type="button" class="delete-btn" data-onclick="confirmDeleteMCQ" data-args="['${mcq._id}']" title="Delete"><i class="fa-solid fa-trash"></i> Delete</button>
                     </div>
                 </li>
@@ -426,47 +426,57 @@
                     const event = { target: tabBtn };
                     switchTab(event, 'add-mcq');
                 }
-                document.getElementById('add-mcq').querySelector('h3').textContent = 'Edit MCQ Question';
+                const headingEl = document.getElementById('add-mcq').querySelector('h3');
+                if (headingEl) headingEl.textContent = 'Edit MCQ Question';
 
                 const catSelect = document.getElementById('category');
-                const catOnchange = catSelect.getAttribute('data-onchange');
-                catSelect.removeAttribute('data-onchange');
-
-                catSelect.value = mcq.category || '';
-                const topicSelect = document.getElementById('topic');
-                topicSelect.innerHTML = '<option value="">Select Topic</option>';
-                if (mcq.topic) {
-                    const opt = document.createElement('option');
-                    opt.value = mcq.topic;
-                    opt.textContent = mcq.topic;
-                    opt.selected = true;
-                    topicSelect.appendChild(opt);
+                if (catSelect) {
+                    const catOnchange = catSelect.getAttribute('data-onchange');
+                    catSelect.removeAttribute('data-onchange');
+                    catSelect.value = mcq.category || '';
+                    const topicSelect = document.getElementById('topic');
+                    if (topicSelect) {
+                        topicSelect.innerHTML = '<option value="">Select Topic</option>';
+                        if (mcq.topic) {
+                            const opt = document.createElement('option');
+                            opt.value = mcq.topic;
+                            opt.textContent = mcq.topic;
+                            opt.selected = true;
+                            topicSelect.appendChild(opt);
+                        }
+                        topicSelect.innerHTML += '<option value="__NEW__" style="font-weight: bold; color: var(--primary);">+ Add New Topic</option>';
+                    }
+                    const newTopicInput = document.getElementById('newTopicInput');
+                    if (newTopicInput) newTopicInput.style.display = 'none';
+                    catSelect.setAttribute('data-onchange', catOnchange);
                 }
-                topicSelect.innerHTML += '<option value="__NEW__" style="font-weight: bold; color: var(--primary);">+ Add New Topic</option>';
-                document.getElementById('newTopicInput').style.display = 'none';
 
-                catSelect.setAttribute('data-onchange', catOnchange);
-
-                document.getElementById('question').value = mcq.question || '';
+                const questionEl = document.getElementById('question');
+                if (questionEl) questionEl.value = mcq.question || '';
 
                 const optionsContainer = document.getElementById('optionsContainer');
-                optionsContainer.innerHTML = '';
-                mcq.options.forEach((opt, i) => {
-                    const div = document.createElement('div');
-                    div.className = 'option-item';
-                    div.innerHTML = `<input type="text" id="option${i}" name="option" class="option-input" placeholder="Option ${i+1}" required value="${escapeHtml(opt)}">
-                        <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>`;
-                    optionsContainer.appendChild(div);
-                });
+                if (optionsContainer) {
+                    optionsContainer.innerHTML = '';
+                    mcq.options.forEach((opt, i) => {
+                        const div = document.createElement('div');
+                        div.className = 'option-item';
+                        div.innerHTML = `<input type="text" class="option-input" placeholder="Option ${i+1}" required value="${escapeHtml(opt)}">
+                            <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>`;
+                        optionsContainer.appendChild(div);
+                    });
+                }
 
-                document.getElementById('correctAnswer').value = mcq.correctAnswer;
-                document.getElementById('difficulty').value = mcq.difficulty || 'easy';
-                document.getElementById('explanation').value = mcq.explanation || '';
+                const correctAnswerEl = document.getElementById('correctAnswer');
+                if (correctAnswerEl) correctAnswerEl.value = mcq.correctAnswer;
+                const difficultyEl = document.getElementById('difficulty');
+                if (difficultyEl) difficultyEl.value = mcq.difficulty || 'easy';
+                const explanationEl = document.getElementById('explanation');
+                if (explanationEl) explanationEl.value = mcq.explanation || '';
 
                 editingId = id;
 
                 const submitBtn = document.getElementById('submitMCQBtn');
-                submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Update MCQ';
+                if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Update MCQ';
 
                 let cancelBtn = document.getElementById('cancelEditBtn');
                 if (!cancelBtn) {
@@ -477,16 +487,18 @@
                     cancelBtn.style.cssText = 'width: 100%; padding: 12px; margin-top: 10px;';
                     cancelBtn.textContent = 'Cancel';
                     cancelBtn.onclick = cancelEdit;
-                    submitBtn.parentNode.appendChild(cancelBtn);
+                    if (submitBtn && submitBtn.parentNode) {
+                        submitBtn.parentNode.appendChild(cancelBtn);
+                    }
                 }
-                cancelBtn.style.display = 'block';
+                if (cancelBtn) cancelBtn.style.display = 'block';
 
-                document.getElementById('add-mcq').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const addMcqEl = document.getElementById('add-mcq');
+                if (addMcqEl) addMcqEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
             } catch (error) {
-                showError('Error loading MCQ: ' + error.message);
+                try { showError('Error loading MCQ: ' + error.message); } catch(e) { alert('Error: ' + error.message); }
             }
         };
-        window.opencode_editMCQ = window.editMCQ;
 
         function cancelEdit() {
             document.getElementById('addMCQForm').reset();
