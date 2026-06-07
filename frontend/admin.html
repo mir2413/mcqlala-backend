@@ -38,15 +38,15 @@
         <div class="stats-grid" id="statsGrid"></div>
 
         <div class="admin-tabs">
-            <button class="tab-btn active" data-onclick="switchTab" data-args="[event, 'add-mcq']"><i class="fa-solid fa-plus"></i> Add MCQ</button>
-            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'view-mcqs']"><i class="fa-solid fa-list"></i> View MCQs</button>
-            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'bulk-upload']"><i class="fa-solid fa-file-csv"></i> Bulk Upload</button>
-            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'manage-nav']"><i class="fa-solid fa-bars"></i> Manage Navigation</button>
-            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'manage-subjects']"><i class="fa-solid fa-book"></i> Manage Subjects</button>
-            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'manage-users']"><i class="fa-solid fa-users"></i> Manage Users</button>
-            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'view-messages']"><i class="fa-solid fa-envelope"></i> Messages <span id="msgBadge" class="badge" style="display:none"></span></button>
-            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'manage-pdfs']"><i class="fa-solid fa-file-pdf"></i> Manage PDFs</button>
-            <button class="tab-btn" data-onclick="switchTab" data-args="[event, 'settings']"><i class="fa-solid fa-cog"></i> Settings</button>
+            <button class="tab-btn active" data-tab="add-mcq" data-onclick="switchTab" data-args="[event, 'add-mcq']"><i class="fa-solid fa-plus"></i> Add MCQ</button>
+            <button class="tab-btn" data-tab="view-mcqs" data-onclick="switchTab" data-args="[event, 'view-mcqs']"><i class="fa-solid fa-list"></i> View MCQs</button>
+            <button class="tab-btn" data-tab="bulk-upload" data-onclick="switchTab" data-args="[event, 'bulk-upload']"><i class="fa-solid fa-file-csv"></i> Bulk Upload</button>
+            <button class="tab-btn" data-tab="manage-nav" data-onclick="switchTab" data-args="[event, 'manage-nav']"><i class="fa-solid fa-bars"></i> Manage Navigation</button>
+            <button class="tab-btn" data-tab="manage-subjects" data-onclick="switchTab" data-args="[event, 'manage-subjects']"><i class="fa-solid fa-book"></i> Manage Subjects</button>
+            <button class="tab-btn" data-tab="manage-users" data-onclick="switchTab" data-args="[event, 'manage-users']"><i class="fa-solid fa-users"></i> Manage Users</button>
+            <button class="tab-btn" data-tab="view-messages" data-onclick="switchTab" data-args="[event, 'view-messages']"><i class="fa-solid fa-envelope"></i> Messages <span id="msgBadge" class="badge" style="display:none"></span></button>
+            <button class="tab-btn" data-tab="manage-pdfs" data-onclick="switchTab" data-args="[event, 'manage-pdfs']"><i class="fa-solid fa-file-pdf"></i> Manage PDFs</button>
+            <button class="tab-btn" data-tab="settings" data-onclick="switchTab" data-args="[event, 'settings']"><i class="fa-solid fa-cog"></i> Settings</button>
         </div>
 
         <div id="successMessage" class="success-message"></div>

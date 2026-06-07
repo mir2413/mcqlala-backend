@@ -313,7 +313,7 @@
                 difficulty: document.getElementById('difficulty').value
             };
 
-            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Adding...'; }
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = editingId ? 'Updating...' : 'Adding...'; }
 
             const userId = localStorage.getItem('userId');
             if (!userId) {
@@ -324,15 +324,23 @@
             const user = getCurrentUser();
 
             try {
-                const response = await fetch(`${API_BASE_URL}/mcqs`, {
-                    method: 'POST',
+                const isEditing = !!editingId;
+                const url = isEditing ? `${API_BASE_URL}/mcqs/${editingId}` : `${API_BASE_URL}/mcqs`;
+                const method = isEditing ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json', 'X-User-ID': user.userId },
                     body: JSON.stringify(mcqData)
                 });
 
                 if (response.ok) {
-                    showSuccess('MCQ added successfully!');
-                    document.getElementById('addMCQForm').reset();
+                    showSuccess(isEditing ? 'MCQ updated successfully!' : 'MCQ added successfully!');
+                    if (isEditing) {
+                        cancelEdit();
+                    } else {
+                        document.getElementById('addMCQForm').reset();
+                    }
                     loadCategories();
                     loadMCQs();
                     loadStats();
@@ -343,7 +351,7 @@
             } catch (error) {
                 showError('Network error: ' + error.message);
             } finally {
-                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add MCQ'; }
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = editingId ? '<i class="fa-solid fa-save"></i> Update MCQ' : '<i class="fa-solid fa-plus"></i> Add MCQ'; }
             }
         }
 
@@ -407,8 +415,117 @@
             }
         }
 
-        function editMCQ(id) {
-            alert('Edit feature coming soon! MCQ ID: ' + id);
+        async function editMCQ(id) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/mcqs/${id}`);
+                if (!response.ok) throw new Error('Failed to fetch MCQ');
+                const mcq = await response.json();
+
+                // Switch to Add MCQ tab
+                const tabBtn = document.querySelector('.tab-btn[data-tab="add-mcq"]');
+                if (tabBtn) {
+                    const event = { target: tabBtn };
+                    switchTab(event, 'add-mcq');
+                }
+                document.getElementById('add-mcq').querySelector('h3').textContent = 'Edit MCQ Question';
+
+                // Populate form
+                document.getElementById('category').value = mcq.category || '';
+                loadTopicsFromEdit(mcq.category, mcq.topic);
+                document.getElementById('question').value = mcq.question || '';
+
+                const optionsContainer = document.getElementById('optionsContainer');
+                optionsContainer.innerHTML = '';
+                mcq.options.forEach((opt, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'option-item';
+                    div.innerHTML = `<input type="text" id="option${i}" name="option" class="option-input" placeholder="Option ${i+1}" required value="${escapeHtml(opt)}">
+                        <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>`;
+                    optionsContainer.appendChild(div);
+                });
+
+                document.getElementById('correctAnswer').value = mcq.correctAnswer;
+                document.getElementById('difficulty').value = mcq.difficulty || 'easy';
+                document.getElementById('explanation').value = mcq.explanation || '';
+
+                editingId = id;
+
+                const submitBtn = document.getElementById('submitMCQBtn');
+                submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Update MCQ';
+
+                let cancelBtn = document.getElementById('cancelEditBtn');
+                if (!cancelBtn) {
+                    cancelBtn = document.createElement('button');
+                    cancelBtn.type = 'button';
+                    cancelBtn.id = 'cancelEditBtn';
+                    cancelBtn.className = 'btn-secondary';
+                    cancelBtn.style.cssText = 'width: 100%; padding: 12px; margin-top: 10px;';
+                    cancelBtn.textContent = 'Cancel';
+                    cancelBtn.onclick = cancelEdit;
+                    submitBtn.parentNode.appendChild(cancelBtn);
+                }
+                cancelBtn.style.display = 'block';
+
+                document.getElementById('add-mcq').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (error) {
+                showError('Error loading MCQ: ' + error.message);
+            }
+        }
+
+        function cancelEdit() {
+            document.getElementById('addMCQForm').reset();
+            document.getElementById('optionsContainer').innerHTML = `
+                <div class="option-item">
+                    <input type="text" id="option0" name="option" class="option-input" placeholder="Option 1" required>
+                    <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>
+                </div>
+                <div class="option-item">
+                    <input type="text" id="option1" name="option" class="option-input" placeholder="Option 2" required>
+                    <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>
+                </div>
+                <div class="option-item">
+                    <input type="text" id="option2" name="option" class="option-input" placeholder="Option 3" required>
+                    <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>
+                </div>
+                <div class="option-item">
+                    <input type="text" id="option3" name="option" class="option-input" placeholder="Option 4" required>
+                    <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>
+                </div>`;
+            document.getElementById('topic').innerHTML = '<option value="">Select Topic</option><option value="__NEW__" style="font-weight: bold; color: var(--primary);">+ Add New Topic</option>';
+            document.getElementById('newTopicInput').style.display = 'none';
+            editingId = null;
+            const submitBtn = document.getElementById('submitMCQBtn');
+            submitBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add MCQ';
+            document.getElementById('add-mcq').querySelector('h3').textContent = 'Add New MCQ Question';
+            const cancelBtn = document.getElementById('cancelEditBtn');
+            if (cancelBtn) cancelBtn.style.display = 'none';
+        }
+
+        function loadTopicsFromEdit(category, selectedTopic) {
+            const topicSelect = document.getElementById('topic');
+            const subjectId = subjectIdMap[category];
+            if (!subjectId) {
+                topicSelect.innerHTML = `<option value="">Select Topic</option><option value="__NEW__" style="font-weight: bold; color: var(--primary);">+ Add New Topic</option>`;
+                return;
+            }
+            fetch(`${API_BASE_URL}/subjects/${subjectId}/topics`)
+                .then(r => r.json())
+                .then(topics => {
+                    topicSelect.innerHTML = `<option value="">Select Topic</option>`;
+                    if (Array.isArray(topics)) {
+                        topics.forEach(t => {
+                            const opt = document.createElement('option');
+                            opt.value = t.name;
+                            opt.textContent = t.name;
+                            if (t.name === selectedTopic) opt.selected = true;
+                            topicSelect.appendChild(opt);
+                        });
+                    }
+                    topicSelect.innerHTML += `<option value="__NEW__" style="font-weight: bold; color: var(--primary);">+ Add New Topic</option>`;
+                })
+                .catch(() => {
+                    topicSelect.innerHTML = `<option value="">Select Topic</option><option value="__NEW__" style="font-weight: bold; color: var(--primary);">+ Add New Topic</option>`;
+                });
         }
 
         async function seedData() {

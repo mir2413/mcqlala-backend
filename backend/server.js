@@ -842,6 +842,36 @@ app.get('/api/mcqs', async (req, res) => {
     }
 });
 
+app.get('/api/mcqs/:id', async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        const mcq = await MCQ.findById(req.params.id);
+        if (!mcq) {
+            return res.status(404).json({ message: 'MCQ not found' });
+        }
+        res.json(mcq);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/mcqs/:id', adminAuth, async (req, res) => {
+    if (!isDbConnected) {
+        return res.status(503).json({ message: 'Database not connected' });
+    }
+    try {
+        const mcq = await MCQ.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!mcq) {
+            return res.status(404).json({ message: 'MCQ not found' });
+        }
+        res.json(mcq);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/mcqs', adminAuth, async (req, res) => {
     if (!isDbConnected) {
         return res.status(503).json({ message: 'Database not connected' });
