@@ -416,6 +416,7 @@
         }
 
         window.editMCQ = async function(id) {
+            alert('editMCQ called: ' + id);
             try {
                 const response = await fetch(`${API_BASE_URL}/mcqs/${id}`);
                 if (!response.ok) throw new Error('Failed to fetch MCQ');
