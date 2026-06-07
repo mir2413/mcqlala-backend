@@ -415,13 +415,12 @@
             }
         }
 
-        async function editMCQ(id) {
+        window.editMCQ = async function(id) {
             try {
                 const response = await fetch(`${API_BASE_URL}/mcqs/${id}`);
                 if (!response.ok) throw new Error('Failed to fetch MCQ');
                 const mcq = await response.json();
 
-                // Switch to Add MCQ tab
                 const tabBtn = document.querySelector('.tab-btn[data-tab="add-mcq"]');
                 if (tabBtn) {
                     const event = { target: tabBtn };
@@ -429,9 +428,25 @@
                 }
                 document.getElementById('add-mcq').querySelector('h3').textContent = 'Edit MCQ Question';
 
-                // Populate form
-                document.getElementById('category').value = mcq.category || '';
-                loadTopicsFromEdit(mcq.category, mcq.topic);
+                const catSelect = document.getElementById('category');
+                const catOnchange = catSelect.getAttribute('data-onchange');
+                catSelect.removeAttribute('data-onchange');
+
+                catSelect.value = mcq.category || '';
+                const topicSelect = document.getElementById('topic');
+                topicSelect.innerHTML = '<option value="">Select Topic</option>';
+                if (mcq.topic) {
+                    const opt = document.createElement('option');
+                    opt.value = mcq.topic;
+                    opt.textContent = mcq.topic;
+                    opt.selected = true;
+                    topicSelect.appendChild(opt);
+                }
+                topicSelect.innerHTML += '<option value="__NEW__" style="font-weight: bold; color: var(--primary);">+ Add New Topic</option>';
+                document.getElementById('newTopicInput').style.display = 'none';
+
+                catSelect.setAttribute('data-onchange', catOnchange);
+
                 document.getElementById('question').value = mcq.question || '';
 
                 const optionsContainer = document.getElementById('optionsContainer');
@@ -470,7 +485,7 @@
             } catch (error) {
                 showError('Error loading MCQ: ' + error.message);
             }
-        }
+        };
 
         function cancelEdit() {
             document.getElementById('addMCQForm').reset();
@@ -499,33 +514,6 @@
             document.getElementById('add-mcq').querySelector('h3').textContent = 'Add New MCQ Question';
             const cancelBtn = document.getElementById('cancelEditBtn');
             if (cancelBtn) cancelBtn.style.display = 'none';
-        }
-
-        function loadTopicsFromEdit(category, selectedTopic) {
-            const topicSelect = document.getElementById('topic');
-            const subjectId = subjectIdMap[category];
-            if (!subjectId) {
-                topicSelect.innerHTML = `<option value="">Select Topic</option><option value="__NEW__" style="font-weight: bold; color: var(--primary);">+ Add New Topic</option>`;
-                return;
-            }
-            fetch(`${API_BASE_URL}/subjects/${subjectId}/topics`)
-                .then(r => r.json())
-                .then(topics => {
-                    topicSelect.innerHTML = `<option value="">Select Topic</option>`;
-                    if (Array.isArray(topics)) {
-                        topics.forEach(t => {
-                            const opt = document.createElement('option');
-                            opt.value = t.name;
-                            opt.textContent = t.name;
-                            if (t.name === selectedTopic) opt.selected = true;
-                            topicSelect.appendChild(opt);
-                        });
-                    }
-                    topicSelect.innerHTML += `<option value="__NEW__" style="font-weight: bold; color: var(--primary);">+ Add New Topic</option>`;
-                })
-                .catch(() => {
-                    topicSelect.innerHTML = `<option value="">Select Topic</option><option value="__NEW__" style="font-weight: bold; color: var(--primary);">+ Add New Topic</option>`;
-                });
         }
 
         async function seedData() {
