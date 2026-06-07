@@ -10,17 +10,22 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
-            background: white;
+            background: var(--bg-card);
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .admin-header h2 {
+            color: var(--text);
         }
 
         .admin-tabs {
             display: flex;
             gap: 15px;
             margin-bottom: 30px;
-            border-bottom: 2px solid #eee;
+            border-bottom: 2px solid var(--border);
         }
 
         .admin-tabs button {
@@ -31,25 +36,39 @@
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
-            color: #666;
+            color: var(--text-muted);
             transition: all 0.3s;
         }
 
         .admin-tabs button.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
+            color: var(--primary);
+            border-bottom-color: var(--primary);
         }
 
         .tab-content {
             display: none;
-            background: white;
+            background: var(--bg-card);
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px var(--shadow);
+            border: 1px solid var(--border);
         }
 
         .tab-content.active {
             display: block;
+        }
+
+        .tab-content h3,
+        .tab-content h4 {
+            color: var(--text);
+        }
+
+        .tab-content p {
+            color: var(--text-muted);
+        }
+
+        .tab-content label {
+            color: var(--text-muted);
         }
 
         .form-grid {
@@ -84,13 +103,15 @@
         .option-item input {
             flex: 1;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border);
             border-radius: 4px;
+            background: var(--bg-primary);
+            color: var(--text);
         }
 
         .option-item button {
             padding: 10px 15px;
-            background: #ff6b6b;
+            background: var(--wrong);
             color: white;
             border: none;
             border-radius: 4px;
@@ -99,7 +120,7 @@
 
         .add-option-btn {
             padding: 10px 15px;
-            background: #667eea;
+            background: var(--primary);
             color: white;
             border: none;
             border-radius: 4px;
@@ -107,27 +128,32 @@
             margin-top: 10px;
         }
 
+        .add-option-btn:hover {
+            background: var(--primary-hover);
+        }
+
         .mcq-list {
             list-style: none;
         }
 
         .mcq-item {
-            background: #f9f9f9;
+            background: var(--bg-primary);
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 15px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--primary);
+            border: 1px solid var(--border);
         }
 
         .mcq-item h4 {
             margin: 0 0 10px 0;
-            color: #333;
+            color: var(--text);
         }
 
         .mcq-item p {
             margin: 5px 0;
             font-size: 14px;
-            color: #666;
+            color: var(--text-muted);
         }
 
         .mcq-item-actions {
@@ -151,12 +177,12 @@
         }
 
         .delete-btn {
-            background: #ff6b6b;
+            background: var(--wrong);
             color: white;
         }
 
         .seed-btn {
-            background: #21cc12;
+            background: var(--correct);
             color: white;
             padding: 12px 24px;
             border: none;
@@ -165,9 +191,13 @@
             font-weight: 600;
         }
 
+        .seed-btn:hover {
+            opacity: 0.9;
+        }
+
         .success-message {
-            background: #d4edda;
-            color: #155724;
+            background: var(--correct);
+            color: white;
             padding: 15px;
             border-radius: 4px;
             margin-bottom: 20px;
@@ -175,8 +205,8 @@
         }
 
         .error-message {
-            background: #f8d7da;
-            color: #721c24;
+            background: var(--wrong);
+            color: white;
             padding: 15px;
             border-radius: 4px;
             margin-bottom: 20px;
@@ -197,27 +227,28 @@
         }
 
         .stat-card {
-            background: white;
+            background: var(--bg-card);
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px var(--shadow);
             text-align: center;
+            border: 1px solid var(--border);
         }
 
         .stat-card h3 {
-            color: #667eea;
+            color: var(--primary);
             font-size: 32px;
             margin: 0;
         }
 
         .stat-card p {
-            color: #666;
+            color: var(--text-muted);
             margin: 10px 0 0 0;
         }
 
         .subject-item {
-            background: #fff;
-            border: 1px solid #e0e0e0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
             border-radius: 8px;
             margin-bottom: 15px;
             padding: 15px;
@@ -226,21 +257,27 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border);
             padding-bottom: 10px;
             margin-bottom: 10px;
+        }
+        .subject-header strong {
+            color: var(--text);
         }
         .topic-list {
             margin-left: 20px;
             padding-left: 15px;
-            border-left: 2px solid #f0f0f0;
+            border-left: 2px solid var(--border);
         }
         .topic-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 8px 0;
-            border-bottom: 1px solid #f9f9f9;
+            border-bottom: 1px solid var(--border);
+        }
+        .topic-item .topic-name {
+            color: var(--text);
         }
         .badge {
             background: #ff4757;
@@ -257,5 +294,67 @@
         }
         .tab-btn {
             position: relative;
+        }
+
+        .btn-secondary {
+            background: var(--bg-primary);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid var(--border);
+        }
+
+        input, select, textarea {
+            color: var(--text);
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        table {
+            color: var(--text);
+        }
+
+        th {
+            background: var(--bg-primary);
+            color: var(--text);
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        a {
+            color: var(--primary);
         }
     

@@ -246,7 +246,7 @@
             if (container.children.length > 2) {
                 btn.parentElement.remove();
             } else {
-                alert('You must have at least 2 options');
+                showError('You must have at least 2 options');
             }
         }
 
@@ -317,7 +317,7 @@
 
             const userId = localStorage.getItem('userId');
             if (!userId) {
-                alert('ERROR: Not logged in!');
+                showError('ERROR: Not logged in!');
                 window.location.href = 'login.html';
                 return;
             }
@@ -414,7 +414,7 @@
         async function seedData() {
             // Removed for security - the /api/seed endpoint has been disabled
             // Use the MCQ addition form to add data manually instead
-            alert('❌ Seed endpoint has been removed for security.\n\nTo add MCQs:\n1. Go to "MCQ Management" tab\n2. Fill the form and click "Add MCQ"\n3. Or import from CSV');
+            showError('Seed endpoint removed. Use the MCQ form or CSV import to add data.');
         }
 
         function showSuccess(message) {
@@ -708,7 +708,7 @@
         async function addSubject() {
             const name = document.getElementById('newSubjectName').value;
             const description = document.getElementById('newSubjectDesc').value;
-            if (!name) return alert('Subject name is required');
+            if (!name) return showError('Subject name is required');
             const user = getCurrentUser();
 
             const url = editingSubjectId ? `${API_BASE_URL}/subjects/${editingSubjectId}` : `${API_BASE_URL}/subjects`;
@@ -815,14 +815,11 @@
             }
             // Decode if it was URI-encoded in data-args (for topic names with special chars)
             const decodedTopicId = decodeURIComponent(topicId);
-            console.log('Deleting topic:', subjectId, topicId, 'decoded:', decodedTopicId, 'user:', user.userId);
             try {
                 const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/topics/${encodeURIComponent(decodedTopicId)}`, { 
                     method: 'DELETE'
                 });
-                console.log('Delete response:', response.status, response.statusText);
                 const text = await response.text();
-                console.log('Response body:', text);
                 if (response.ok) {
                     showSuccess('Topic deleted');
                     setTimeout(() => loadSubjects(), 100);
@@ -830,7 +827,6 @@
                     showError('Failed to delete topic: ' + text);
                 }
             } catch (e) { 
-                console.error('Delete error:', e);
                 showError(e.message); 
             }
         }
@@ -1039,7 +1035,7 @@
                 }
 
                 container.innerHTML = messages.map(msg => `
-                    <div style="background:${msg.read ? '#f9f9f9' : '#eef2ff'}; border:1px solid ${msg.read ? '#eee' : '#c7d2fe'}; border-left: 4px solid ${msg.read ? 'transparent' : '#667eea'}; padding:15px; margin-bottom:10px; border-radius:5px; display: flex; gap: 15px;">
+                    <div style="background:${msg.read ? 'var(--bg-primary)' : 'var(--bg-card)'}; border:1px solid ${msg.read ? 'var(--border)' : 'var(--primary)'}; border-left: 4px solid ${msg.read ? 'transparent' : 'var(--primary)'}; padding:15px; margin-bottom:10px; border-radius:5px; display: flex; gap: 15px;">
                         <div style="display: flex; align-items: flex-start; padding-top: 5px;">
                             <input type="checkbox" class="message-checkbox" name="messageIds" value="${msg._id}" style="width: 18px; height: 18px; cursor: pointer;">
                         </div>
@@ -1101,7 +1097,7 @@
             const user = getCurrentUser();
             
             if (ids.length === 0) {
-                alert('Please select messages to delete.');
+                showError('Please select messages to delete.');
                 return;
             }
 
@@ -1128,7 +1124,7 @@
 
         async function changeAdminPassword() {
             const newPassword = document.getElementById('newAdminPassword').value;
-            if (!newPassword) return alert('Please enter a new password');
+            if (!newPassword) return showError('Please enter a new password');
             const user = getCurrentUser();
             
             try {
@@ -1246,5 +1242,4 @@
             }
         };
 
-        document.querySelector('button[data-args*="manage-pdfs"]')?.addEventListener('click', loadPdfs);
     
