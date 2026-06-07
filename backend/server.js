@@ -256,15 +256,14 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "cdnjs.cloudflare.com", (req, res) => `'nonce-${res.locals.nonce}'`],
+                scriptSrc: ["'self'", "cdnjs.cloudflare.com", (req, res) => `'nonce-${res.locals.nonce}'`],
             styleSrc: ["'self'", "cdnjs.cloudflare.com", "fonts.googleapis.com", (req, res) => `'nonce-${res.locals.nonce}'`],
             fontSrc: ["'self'", "cdnjs.cloudflare.com", "fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "blob:"],
             connectSrc: ["'self'"],
             frameSrc: ["'none'"],
             objectSrc: ["'none'"],
-            frameAncestors: ["'none'"],
-            upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
+            frameAncestors: ["'none'"]
         }
     },
     crossOriginEmbedderPolicy: false,
@@ -421,10 +420,12 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // Note: HTML entity encoding is NOT done here — it would corrupt data in DB.
 // Frontend's escapeHtml() handles encoding at display time.
 const sanitizeInput = (req, res, next) => {
+    const skipFields = ['password', 'newPassword'];
     const sanitize = (obj) => {
         if (typeof obj !== 'object' || obj === null) return obj;
         
         for (const key in obj) {
+            if (skipFields.includes(key)) continue;
             if (typeof obj[key] === 'string') {
                 // Strip HTML tags to prevent XSS, but keep special characters raw
                 obj[key] = obj[key]
@@ -1128,7 +1129,8 @@ app.post('/api/scores', async (req, res) => {
             timeTaken: req.body.timeTaken || null,
             examMode: req.body.examMode || 'none'
         });
-console.log(`[SCORE] ${scoreData.username}: ${scoreData.score}/${scoreData.totalQuestions} (${scoreData.percentage}%) - ${scoreData.topic}`);
+
+
         res.json(scoreData);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1454,7 +1456,7 @@ async function sendResetEmail(email, resetUrl) {
         };
 
         await emailTransporter.sendMail(mailOptions);
-        console.log(`[EMAIL SENT] Reset email sent to ${email}`);
+
         return { success: true };
     } catch (err) {
         console.error('[EMAIL ERROR]', err.message);
@@ -1529,7 +1531,7 @@ app.post('/api/users/reset-password', async (req, res) => {
         user.resetTokenExpiry = undefined;
         await user.save();
         
-        console.log(`[RESET COMPLETE] Password reset for ${user.email}`);
+
         res.json({ message: 'Password reset successful! You can now login.' });
     } catch (err) {
         res.status(500).json({ message: 'Error resetting password' });
@@ -1672,17 +1674,12 @@ app.post('/api/backup/restore/:filename', adminAuth, async (req, res) => {
 
 // Download backup file
 app.get('/api/backup/download/:filename', adminAuth, (req, res) => {
-    const filepath = require('path').join(__dirname, '..', 'backups', req.params.filename);
+    const filepath = require('path').join(__dirname, '..', 'backups', require('path').basename(req.params.filename));
     if (require('fs').existsSync(filepath)) {
         res.download(filepath);
     } else {
         res.status(404).json({ message: 'Backup file not found' });
     }
-});
-
-// Health check endpoint (must be before wildcard)
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Global Error Handler - Catches any unhandled errors
@@ -1692,7 +1689,7 @@ app.use((err, req, res, next) => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
     console.error('[UNHANDLED REJECTION]', reason);
 });
 

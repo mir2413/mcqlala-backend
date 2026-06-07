@@ -24,7 +24,7 @@
 ### 1. Backend → Render
 - Upload: `backend/` folder contents
 - Start Command: `node server.js`
-- Env Variable: `MONGODB_URI=mongodb+srv://mcqlala:mcqlala123@cluster0.xxxx.mongodb.net/?retryWrites=true&w=majority`
+- Env Variable: `MONGODB_URI=mongodb+srv://your-username:your-password@your-cluster.mongodb.net/?retryWrites=true&w=majority`
 - URL Example: `https://mcqlala-backend.onrender.com`
 
 ### 2. Frontend → Vercel

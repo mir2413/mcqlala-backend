@@ -4,15 +4,7 @@
             window.API_BASE_URL = window.location.origin + '/api';
         }
         
-        // Store original fetch
-        const adminOriginalFetch = window.fetch;
-        
-        // Ensure credentials are included
-        window.fetch = function(url, options) {
-            options = options || {};
-            options.credentials = 'include';
-            return adminOriginalFetch(url, options);
-        };
+        // Fetch override handled by app.js (credentials + CSRF tokens)
 
         // SECURITY: Escape HTML to prevent XSS
         function escapeHtml(text) {

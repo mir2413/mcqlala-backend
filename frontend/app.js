@@ -582,9 +582,9 @@ window.loadNavItemsAdmin = async function() {
         items.forEach(item => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${item.text || item.name}</td>
-                <td>${item.path || item.link}</td>
-                <td><i class="${item.icon}"></i> ${item.icon}</td>
+                <td>${sanitizeHTML(item.text || item.name)}</td>
+                <td>${sanitizeHTML(item.path || item.link)}</td>
+                <td><i class="${sanitizeHTML(item.icon)}"></i> ${sanitizeHTML(item.icon)}</td>
                 <td>
                     <button class="btn btn-danger btn-sm" data-onclick="deleteNavItem" data-args="[&quot;${item._id}&quot;]">
                         <i class="fa fa-trash"></i>
@@ -687,8 +687,8 @@ window.loadSubjectsAdmin = async function() {
         items.forEach(item => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${item.name}</td>
-                <td>${item.description || '-'}</td>
+                <td>${sanitizeHTML(item.name)}</td>
+                <td>${sanitizeHTML(item.description || '-')}</td>
                 <td>${item.topics ? item.topics.length : 0} topics</td>
                 <td>
                     <button class="btn btn-danger btn-sm" data-onclick="deleteSubject" data-args="[&quot;${item._id}&quot;]">

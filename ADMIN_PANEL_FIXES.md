@@ -56,8 +56,8 @@ fetch('/api/subjects', {
 
 1. **Go to**: `http://localhost:3004/login.html`
 2. **Enter**:
-   - Email: `tawseef2414@gmail.com`
-   - Password: `tawseef@1237006`
+   - Email: `admin@example.com`
+   - Password: `your-admin-password`
 3. **Click**: Login
 4. **Access Admin Panel**: `http://localhost:3004/admin.html`
 

@@ -140,7 +140,7 @@ npm start
 # Test login endpoint
 curl -X POST https://your-domain.com/api/users/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"tawseef2414@gmail.com","password":"tawseef@1237006"}'
+   -d '{"email":"admin@example.com","password":"your-admin-password"}'
 
 # Should return user data with 200 status
 
