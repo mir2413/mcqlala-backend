@@ -247,10 +247,12 @@
         let allSubjects = [];
         let selectedSubjects = [];
         let subjectCounter = 0;
+        let topicMcqCounts = {};
 
         window.addEventListener('DOMContentLoaded', async () => {
             // Load all subjects
             await loadSubjects();
+            await loadMcqStats();
             
             // Event listeners
             document.getElementById('addSubjectBtn').addEventListener('click', addQuizSubject);
@@ -269,6 +271,21 @@
                 }
             } catch (e) {
                 console.error('Error loading subjects:', e);
+            }
+        }
+
+        async function loadMcqStats() {
+            try {
+                const response = await fetch('/api/mcqs/stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    stats.forEach(s => {
+                        const key = `${s._id.category}||${s._id.topic}`;
+                        topicMcqCounts[key] = s.count;
+                    });
+                }
+            } catch (e) {
+                console.error('Error loading MCQ stats:', e);
             }
         }
 
@@ -359,6 +376,7 @@
                 const isSelected = topicData ? topicData.selected : false;
                 const mcqCount = topicData ? topicData.mcqCount : 10;
                 const safeId = `t_${subject.id}_${topicName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const totalAvailable = topicMcqCounts[`${subject.name}||${topicName}`] || 0;
                 
                 return `
                     <div class="topic-item${isSelected ? ' selected' : ''}" 
@@ -368,14 +386,18 @@
                             ${isSelected ? '<i class="fa-solid fa-check"></i>' : ''}
                         </div>
                         <span class="topic-name">${topicName}</span>
-                        <div class="mcq-stepper" id="stepper_${safeId}">
-                            <button class="stepper-btn" onclick="event.stopPropagation(); decMcq('${subject.id}', '${topicName}')">
-                                <i class="fa-solid fa-minus"></i>
-                            </button>
-                            <span class="stepper-value" id="mcqVal_${safeId}">${mcqCount}</span>
-                            <button class="stepper-btn" onclick="event.stopPropagation(); incMcq('${subject.id}', '${topicName}')">
-                                <i class="fa-solid fa-plus"></i>
-                            </button>
+                        <div class="mcq-count-wrap" id="countWrap_${safeId}">
+                            <input type="number" 
+                                   class="mcq-input" 
+                                   id="mcqInput_${safeId}" 
+                                   value="${mcqCount}" 
+                                   min="1" 
+                                   max="${totalAvailable || 100}"
+                                   ${!isSelected ? 'disabled' : ''}
+                                   onchange="event.stopPropagation(); updateTopicMcqCount('${subject.id}', '${topicName}', this.value)"
+                                   onclick="event.stopPropagation()"
+                                   inputmode="numeric">
+                            <span class="mcq-total">/ <strong>${totalAvailable || '?'}</strong></span>
                         </div>
                     </div>
                 `;
@@ -394,26 +416,6 @@
 
         function toggleTopicFromItem(subjectId, topicName, wasSelected) {
             toggleTopic(subjectId, topicName, !wasSelected);
-        }
-
-        function decMcq(subjectId, topicName) {
-            const subject = selectedSubjects.find(s => s.id === subjectId);
-            if (!subject) return;
-            const topic = subject.topics.find(t => t.name === topicName);
-            if (topic) {
-                const newVal = Math.max(1, (topic.mcqCount || 10) - 5);
-                updateTopicMcqCount(subjectId, topicName, newVal);
-            }
-        }
-
-        function incMcq(subjectId, topicName) {
-            const subject = selectedSubjects.find(s => s.id === subjectId);
-            if (!subject) return;
-            const topic = subject.topics.find(t => t.name === topicName);
-            if (topic) {
-                const newVal = Math.min(100, (topic.mcqCount || 10) + 5);
-                updateTopicMcqCount(subjectId, topicName, newVal);
-            }
         }
 
         function toggleTopic(subjectId, topicName, isSelected) {
@@ -437,6 +439,8 @@
                 if (check) {
                     check.innerHTML = isSelected ? '<i class="fa-solid fa-check"></i>' : '';
                 }
+                const input = item.querySelector('.mcq-input');
+                if (input) input.disabled = !isSelected;
             }
             
             updateSummary();
@@ -448,11 +452,12 @@
             
             const topic = subject.topics.find(t => t.name === topicName);
             if (topic) {
-                topic.mcqCount = parseInt(count) || 10;
-                // Update visual
+                const val = parseInt(count) || 10;
+                topic.mcqCount = Math.max(1, Math.min(val, 100));
+                // Update visual input
                 const safeId = `t_${subjectId}_${topicName.replace(/[^a-zA-Z0-9]/g, '_')}`;
-                const valEl = document.getElementById(`mcqVal_${safeId}`);
-                if (valEl) valEl.textContent = topic.mcqCount;
+                const input = document.getElementById(`mcqInput_${safeId}`);
+                if (input) input.value = topic.mcqCount;
                 updateSummary();
             }
         }

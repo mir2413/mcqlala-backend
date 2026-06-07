@@ -661,46 +661,53 @@ body.light-mode .theme-toggle:hover {
     user-select: none;
 }
 
-.topic-item .mcq-stepper {
+.topic-item .mcq-count-wrap {
     display: flex;
     align-items: center;
     gap: 4px;
     opacity: 0;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
-.topic-item.selected .mcq-stepper {
+.topic-item.selected .mcq-count-wrap {
     opacity: 1;
 }
 
-.mcq-stepper .stepper-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
+.mcq-count-wrap .mcq-input {
+    width: 50px;
+    padding: 4px 6px;
     border: 1px solid var(--border);
+    border-radius: 6px;
     background: var(--bg-primary);
     color: var(--text);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    transition: all 0.15s;
-    user-select: none;
-}
-
-.mcq-stepper .stepper-btn:hover {
-    background: #667eea;
-    border-color: #667eea;
-    color: white;
-}
-
-.mcq-stepper .stepper-value {
-    font-size: 14px;
-    font-weight: 700;
-    color: #667eea;
-    min-width: 30px;
+    font-size: 13px;
+    font-weight: 600;
     text-align: center;
+    -moz-appearance: textfield;
+}
+
+.mcq-count-wrap .mcq-input::-webkit-outer-spin-button,
+.mcq-count-wrap .mcq-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.mcq-count-wrap .mcq-input:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.mcq-count-wrap .mcq-total {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.mcq-count-wrap .mcq-total strong {
+    color: #667eea;
+    font-weight: 700;
 }
 
 /* --- ENHANCED SUMMARY --- */
