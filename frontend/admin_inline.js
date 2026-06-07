@@ -460,7 +460,7 @@
                     mcq.options.forEach((opt, i) => {
                         const div = document.createElement('div');
                         div.className = 'option-item';
-                        div.innerHTML = `<input type="text" class="option-input" placeholder="Option ${i+1}" required value="${escapeHtml(opt)}">
+                        div.innerHTML = `<input type="text" id="option${i}" class="option-input" placeholder="Option ${i+1}" required value="${escapeHtml(opt)}">
                             <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>`;
                         optionsContainer.appendChild(div);
                     });

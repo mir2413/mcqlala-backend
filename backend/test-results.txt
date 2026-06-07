@@ -1,0 +1,114 @@
+﻿  console.error
+    Failed to decode topicId: URIError: URI malformed
+        at decodeURIComponent (<anonymous>)
+        at decodeURIComponent (E:\New folder (3)\backend\__tests__\topic-deletion-bug.test.js:88:28)
+        at processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+      88 |           decodedTopicId = decodeURIComponent(topicId);
+      89 |         } catch (e) {
+    > 90 |           console.error('Failed to decode topicId:', e);
+         |                   ^
+      91 |           // Continue with original topicId
+      92 |         }
+      93 |         
+
+      at error (E:\New folder (3)../../backend/__tests__/topic-deletion-bug.test.js:90:19)
+
+  console.error
+    Failed to decode topicId: URIError: URI malformed
+        at decodeURIComponent (<anonymous>)
+        at decodeURIComponent (E:\New folder (3)\backend\__tests__\topic-deletion-bug.test.js:88:28)
+        at processTicksAndRejections (node:internal/process/task_queues:103:5)
+
+      88 |           decodedTopicId = decodeURIComponent(topicId);
+      89 |         } catch (e) {
+    > 90 |           console.error('Failed to decode topicId:', e);
+         |                   ^
+      91 |           // Continue with original topicId
+      92 |         }
+      93 |         
+
+      at error (E:\New folder (3)../../backend/__tests__/topic-deletion-bug.test.js:90:19)
+
+  console.log
+    Encoded topic name: %20%20Multiple%20%20%20Spaces%20%20
+
+      at Object.log (E:\New folder (3)../../backend/__tests__/topic-deletion-bug.test.js:224:15)
+
+  console.log
+    Original topic name:   Multiple   Spaces
+
+      at Object.log (E:\New folder (3)../../backend/__tests__/topic-deletion-bug.test.js:225:15)
+
+  console.log
+    Stored name: "  History & Geography  "
+
+      at Object.log (E:\New folder (3)../../backend/__tests__/topic-deletion-bug.test.js:287:15)
+
+  console.log
+    Request name: "History & Geography"
+
+      at Object.log (E:\New folder (3)../../backend/__tests__/topic-deletion-bug.test.js:288:15)
+
+  console.log
+    Topics after delete: []
+
+      at Object.log (E:\New folder (3)../../backend/__tests__/topic-deletion-bug.test.js:298:15)
+
+node.exe : PASS __tests__/topic-deletion-bug.test.js
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS __tests__/...ion-bug.test.js:String) [], RemoteExcepti 
+   on
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Bug Condition Exploration: Topic Deletion with Special Characters
+    Property 1: Bug Condition - Special Character Topic Deletion
+      ΓêÜ should handle topic with multiple spaces (47 ms)
+      ΓêÜ should handle topic with Unicode characters (49 ms)
+      ΓêÜ BUG SCENARIO: topic stored with extra spaces, delete request with trimmed name (55 ms)
+      Topics WITH _ids (control group)
+        ΓêÜ should delete topic "History & Geography" with _id (Ampersand character) (197 ms)
+        ΓêÜ should delete topic "Math + Science" with _id (Plus sign character) (38 ms)
+        ΓêÜ should delete topic "50% Discount" with _id (Percent sign character) (31 ms)
+        ΓêÜ should delete topic "Q&A: 100% Free!" with _id (Multiple special characters) (34 ms)
+      Topics WITHOUT _ids - Frontend properly encodes URLs
+        ΓêÜ should delete topic "History & Geography" without _id (Ampersand character) (78 ms)
+        ΓêÜ should delete topic "Math + Science" without _id (Plus sign character) (36 ms)
+        ΓêÜ should delete topic "50% Discount" without _id (Percent sign character) (119 ms)
+        ΓêÜ should delete topic "Q&A: 100% Free!" without _id (Multiple special characters) (43 ms)
+  Property 2: Preservation - Normal Topic Deletion and Other Operations
+    Alphanumeric Topic Deletion (Baseline Behavior)
+      ΓêÜ should successfully delete alphanumeric topic "Mathematics" (31 ms)
+      ΓêÜ should successfully delete alphanumeric topic "Science" (34 ms)
+      ΓêÜ should successfully delete alphanumeric topic "History" (36 ms)
+      ΓêÜ should successfully delete alphanumeric topic "Geography" (63 ms)
+      ΓêÜ should successfully delete alphanumeric topic "Physics" (30 ms)
+      ΓêÜ should successfully delete alphanumeric topic "Chemistry" (31 ms)
+      ΓêÜ should successfully delete alphanumeric topic "Biology" (43 ms)
+      ΓêÜ should successfully delete alphanumeric topic "English" (33 ms)
+      ΓêÜ should successfully delete alphanumeric topic "History123" (48 ms)
+      ΓêÜ should successfully delete alphanumeric topic "Math101" (70 ms)
+      ΓêÜ should successfully delete alphanumeric topic "Science2024" (30 ms)
+      ΓêÜ should delete alphanumeric topic with _id (27 ms)
+      ΓêÜ should delete only the specified alphanumeric topic (35 ms)
+    Topic Addition (Preservation)
+      ΓêÜ should successfully add alphanumeric topic (67 ms)
+      ΓêÜ should successfully add topic with special characters (31 ms)
+    Topic Editing (Preservation)
+      ΓêÜ should successfully edit alphanumeric topic name (31 ms)
+      ΓêÜ should return 404 when editing non-existent topic (32 ms)
+    Error Handling (Preservation)
+      ΓêÜ should return 404 when deleting topic from non-existent subject (30 ms)
+      ΓêÜ should return 401 when deleting without authentication (36 ms)
+      ΓêÜ should return 403 when deleting with non-admin token (38 ms)
+    Property-Based: Alphanumeric Topic Deletion
+      ΓêÜ should delete any alphanumeric topic name (687 ms)
+      ΓêÜ should preserve other topics when deleting one alphanumeric topic (453 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       33 passed, 33 total
+Snapshots:   0 total
+Time:        4.151 s, estimated 5 s
+Ran all test suites.
