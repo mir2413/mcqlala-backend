@@ -415,88 +415,143 @@
             }
         }
 
+        let viewEditingId = null;
+
         window.editMCQ = async function(id) {
             try {
                 const response = await fetch(`${API_BASE_URL}/mcqs/${id}`);
                 if (!response.ok) throw new Error('Failed to fetch MCQ');
                 const mcq = await response.json();
 
-                const tabBtn = document.querySelector('.tab-btn[data-tab="add-mcq"]');
-                if (tabBtn) {
-                    const event = { target: tabBtn };
-                    switchTab(event, 'add-mcq');
-                }
-                const headingEl = document.getElementById('add-mcq').querySelector('h3');
-                if (headingEl) headingEl.textContent = 'Edit MCQ Question';
+                const section = document.getElementById('viewEditSection');
+                section.style.display = 'block';
 
-                const catSelect = document.getElementById('category');
+                const catSelect = document.getElementById('viewEditCategory');
                 if (catSelect) {
-                    const catOnchange = catSelect.getAttribute('data-onchange');
-                    catSelect.removeAttribute('data-onchange');
-                    catSelect.value = mcq.category || '';
-                    const topicSelect = document.getElementById('topic');
-                    if (topicSelect) {
-                        topicSelect.innerHTML = '<option value="">Select Topic</option>';
-                        if (mcq.topic) {
-                            const opt = document.createElement('option');
-                            opt.value = mcq.topic;
-                            opt.textContent = mcq.topic;
-                            opt.selected = true;
-                            topicSelect.appendChild(opt);
+                    const currentVal = mcq.category || '';
+                    const options = catSelect.options;
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].value === currentVal) {
+                            options[i].selected = true;
+                            break;
                         }
-                        topicSelect.innerHTML += '<option value="__NEW__" style="font-weight: bold; color: var(--primary);">+ Add New Topic</option>';
                     }
-                    const newTopicInput = document.getElementById('newTopicInput');
-                    if (newTopicInput) newTopicInput.style.display = 'none';
-                    catSelect.setAttribute('data-onchange', catOnchange);
                 }
 
-                const questionEl = document.getElementById('question');
-                if (questionEl) questionEl.value = mcq.question || '';
-
-                const optionsContainer = document.getElementById('optionsContainer');
-                if (optionsContainer) {
-                    optionsContainer.innerHTML = '';
-                    mcq.options.forEach((opt, i) => {
-                        const div = document.createElement('div');
-                        div.className = 'option-item';
-                        div.innerHTML = `<input type="text" id="option${i}" class="option-input" placeholder="Option ${i+1}" required value="${escapeHtml(opt)}">
-                            <button type="button" data-onclick="removeOption" data-args="[this]">Remove</button>`;
-                        optionsContainer.appendChild(div);
+                const topicSelect = document.getElementById('viewEditTopic');
+                if (topicSelect) {
+                    topicSelect.innerHTML = '<option value="">Select Topic</option>';
+                    const catTopics = siteStructure[mcq.category] || [];
+                    catTopics.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t; opt.textContent = t;
+                        if (t === mcq.topic) opt.selected = true;
+                        topicSelect.appendChild(opt);
                     });
                 }
 
-                document.getElementById('correctAnswer').value = mcq.correctAnswer;
-                document.getElementById('difficulty').value = mcq.difficulty || 'easy';
-                document.getElementById('explanation').value = mcq.explanation || '';
+                document.getElementById('viewEditQuestion').value = mcq.question || '';
 
-                editingId = id;
+                const optionsContainer = document.getElementById('viewEditOptions');
+                optionsContainer.innerHTML = '';
+                mcq.options.forEach((opt, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'option-item';
+                    div.style.marginBottom = '8px';
+                    div.innerHTML = `<input type="text" class="view-edit-option" data-index="${i}" value="${escapeHtml(opt)}" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:4px;"> <button type="button" class="remove-edit-option" data-index="${i}" style="padding:10px 15px;background:var(--wrong);color:white;border:none;border-radius:4px;cursor:pointer;">Remove</button>`;
+                    optionsContainer.appendChild(div);
+                });
 
-                const submitBtn = document.getElementById('submitMCQBtn');
-                if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Update MCQ';
+                document.getElementById('viewEditCorrect').value = mcq.correctAnswer;
+                document.getElementById('viewEditDifficulty').value = mcq.difficulty || 'easy';
+                document.getElementById('viewEditExplanation').value = mcq.explanation || '';
 
-                let cancelBtn = document.getElementById('cancelEditBtn');
-                if (!cancelBtn) {
-                    cancelBtn = document.createElement('button');
-                    cancelBtn.type = 'button';
-                    cancelBtn.id = 'cancelEditBtn';
-                    cancelBtn.className = 'btn-secondary';
-                    cancelBtn.style.cssText = 'width: 100%; padding: 12px; margin-top: 10px;';
-                    cancelBtn.textContent = 'Cancel';
-                    cancelBtn.onclick = cancelEdit;
-                    if (submitBtn && submitBtn.parentNode) {
-                        submitBtn.parentNode.appendChild(cancelBtn);
-                    }
-                }
-                if (cancelBtn) cancelBtn.style.display = 'block';
+                viewEditingId = id;
 
-                const addMcqEl = document.getElementById('add-mcq');
-                if (addMcqEl) addMcqEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 showSuccess('MCQ loaded for editing');
             } catch (error) {
                 showError('Error loading MCQ: ' + error.message);
             }
         };
+
+        document.getElementById('viewEditOptions').addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-edit-option')) {
+                e.target.parentElement.remove();
+            }
+        });
+
+        document.getElementById('viewEditCancelBtn').addEventListener('click', function() {
+            document.getElementById('viewEditSection').style.display = 'none';
+            viewEditingId = null;
+        });
+
+        const viewEditCat = document.getElementById('viewEditCategory');
+        if (viewEditCat) {
+            viewEditCat.addEventListener('change', function() {
+                const topicSelect = document.getElementById('viewEditTopic');
+                topicSelect.innerHTML = '<option value="">Select Topic</option>';
+                const subjects = siteStructure[this.value];
+                if (subjects) {
+                    subjects.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t; opt.textContent = t;
+                        topicSelect.appendChild(opt);
+                    });
+                }
+            });
+        }
+
+        document.getElementById('viewEditSaveBtn').addEventListener('click', async function() {
+            const id = viewEditingId;
+            if (!id) { showError('No MCQ is being edited'); return; }
+
+            const optionInputs = document.querySelectorAll('#viewEditOptions .view-edit-option');
+            const options = Array.from(optionInputs).map(inp => inp.value.trim()).filter(v => v !== '');
+            if (options.length < 2) { showError('Please provide at least 2 options.'); return; }
+
+            const correctAnswer = parseInt(document.getElementById('viewEditCorrect').value);
+            if (isNaN(correctAnswer) || correctAnswer < 0 || correctAnswer >= options.length) {
+                showError('Correct answer must be between 0 and ' + (options.length - 1));
+                return;
+            }
+
+            const category = document.getElementById('viewEditCategory').value;
+            if (!category) { showError('Please select a category.'); return; }
+
+            const topic = document.getElementById('viewEditTopic').value;
+            if (!topic) { showError('Please select a topic.'); return; }
+
+            const data = {
+                category,
+                topic,
+                question: document.getElementById('viewEditQuestion').value.trim(),
+                options,
+                correctAnswer,
+                difficulty: document.getElementById('viewEditDifficulty').value,
+                explanation: document.getElementById('viewEditExplanation').value.trim()
+            };
+
+            try {
+                const btn = document.getElementById('viewEditSaveBtn');
+                btn.disabled = true; btn.textContent = 'Saving...';
+                const res = await fetch(`${API_BASE_URL}/mcqs/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (!res.ok) throw new Error('Failed to update MCQ');
+                showSuccess('MCQ updated successfully!');
+                document.getElementById('viewEditSection').style.display = 'none';
+                viewEditingId = null;
+                loadMCQs();
+            } catch (err) {
+                showError('Error updating MCQ: ' + err.message);
+            } finally {
+                const btn = document.getElementById('viewEditSaveBtn');
+                btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Save Changes';
+            }
+        });
 
         function cancelEdit() {
             document.getElementById('addMCQForm').reset();
@@ -569,6 +624,7 @@
         async function loadCategories() {
             const categorySelect = document.getElementById('category');
             const filterCategorySelect = document.getElementById('filterCategory');
+            const viewEditCategory = document.getElementById('viewEditCategory');
 
             categorySelect.innerHTML = '<option value="">Loading...</option>';
             filterCategorySelect.innerHTML = '<option value="">Loading...</option>';
@@ -579,6 +635,7 @@
 
             categorySelect.innerHTML = '<option value="">Select Category</option>';
             filterCategorySelect.innerHTML = '<option value="">All Categories</option>';
+            if (viewEditCategory) viewEditCategory.innerHTML = '<option value="">Select Category</option>';
 
             const categories = Object.keys(siteStructure).sort();
 
@@ -592,6 +649,7 @@
             categories.forEach(category => {
                 categorySelect.add(new Option(category, category));
                 filterCategorySelect.add(new Option(category, category));
+                if (viewEditCategory) viewEditCategory.add(new Option(category, category));
             });
 
             // Refresh topics if a category is already selected

@@ -135,6 +135,55 @@
         <!-- View MCQs Tab -->
         <div id="view-mcqs" class="tab-content">
             <h3>All Questions</h3>
+            <div id="viewEditSection" style="display: none; background: var(--bg-card); padding: 20px; border-radius: 8px; border: 2px solid var(--primary); margin-bottom: 20px;">
+                <h4 style="margin-top: 0; color: var(--primary);">Edit MCQ Question</h4>
+                <div class="form-grid">
+                    <div>
+                        <label for="viewEditCategory">Category</label>
+                        <select id="viewEditCategory" style="padding: 10px; border: 1px solid var(--border); border-radius: 4px; width: 100%;"><option value="">Loading...</option></select>
+                    </div>
+                    <div>
+                        <label for="viewEditTopic">Topic</label>
+                        <select id="viewEditTopic" style="padding: 10px; border: 1px solid var(--border); border-radius: 4px; width: 100%;"><option value="">Select Topic</option></select>
+                    </div>
+                </div>
+                <div class="form-grid form-full">
+                    <div>
+                        <label for="viewEditQuestion">Question</label>
+                        <textarea id="viewEditQuestion" style="padding: 10px; border: 1px solid var(--border); border-radius: 4px; min-height: 80px; width: 100%;"></textarea>
+                    </div>
+                </div>
+                <div class="form-grid form-full">
+                    <div>
+                        <label>Options</label>
+                        <div id="viewEditOptions"></div>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div>
+                        <label for="viewEditCorrect">Correct Answer (index)</label>
+                        <input type="number" id="viewEditCorrect" min="0" style="padding: 10px; border: 1px solid var(--border); border-radius: 4px; width: 100%;">
+                    </div>
+                    <div>
+                        <label for="viewEditDifficulty">Difficulty</label>
+                        <select id="viewEditDifficulty" style="padding: 10px; border: 1px solid var(--border); border-radius: 4px; width: 100%;">
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid form-full">
+                    <div>
+                        <label for="viewEditExplanation">Explanation</label>
+                        <textarea id="viewEditExplanation" style="padding: 10px; border: 1px solid var(--border); border-radius: 4px; min-height: 60px; width: 100%;"></textarea>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button id="viewEditSaveBtn" class="btn-primary"><i class="fa-solid fa-save"></i> Save Changes</button>
+                    <button id="viewEditCancelBtn" class="btn-secondary">Cancel</button>
+                </div>
+            </div>
             <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
                 <label for="searchMCQ" style="display: none;">Search</label>
                 <input type="text" id="searchMCQ" name="searchMCQ" placeholder="Search questions..." style="padding: 10px; border: 1px solid var(--border); border-radius: 4px; flex: 1; min-width: 250px;">
@@ -297,6 +346,6 @@
 
     <script src="app.js?v=1777000000000"></script>
     
-    <script src="admin_inline.js?v=1782000000000"></script>
+    <script src="admin_inline.js?v=1783000000000"></script>
 </body>
 </html>
