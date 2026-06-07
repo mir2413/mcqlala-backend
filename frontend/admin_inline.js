@@ -83,7 +83,7 @@
             document.getElementById('userSearchInput').addEventListener('keyup', () => loadUsers(1));
         });
 
-        function switchTab(e, tabName) {
+        window.switchTab = function switchTab(e, tabName) {
             // Hide all tabs
             const tabs = document.querySelectorAll('.tab-content');
             tabs.forEach(tab => tab.classList.remove('active'));
@@ -416,13 +416,10 @@
         }
 
         window.editMCQ = async function(id) {
-            console.log('editMCQ called with id:', id);
             try {
                 const response = await fetch(`${API_BASE_URL}/mcqs/${id}`);
-                console.log('editMCQ fetch status:', response.status);
                 if (!response.ok) throw new Error('Failed to fetch MCQ');
                 const mcq = await response.json();
-                console.log('editMCQ got mcq:', mcq._id);
 
                 const tabBtn = document.querySelector('.tab-btn[data-tab="add-mcq"]');
                 if (tabBtn) {
@@ -495,9 +492,8 @@
 
                 const addMcqEl = document.getElementById('add-mcq');
                 if (addMcqEl) addMcqEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                console.log('editMCQ completed successfully');
+                showSuccess('MCQ loaded for editing');
             } catch (error) {
-                console.error('editMCQ error:', error.message);
                 showError('Error loading MCQ: ' + error.message);
             }
         };
