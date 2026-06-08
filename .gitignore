@@ -2,3 +2,10 @@ node_modules/
 .env
 .DS_Store
 backend/database.json
+backend/verification_*
+backend/verification_checkpoint.json
+backend/verification_report.json
+backend/verification_summary.txt
+backend/verification_mcqs.json
+backend/verification_output.log
+backend/verification_error.log

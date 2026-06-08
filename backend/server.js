@@ -22,6 +22,7 @@ const bcryptjs = require('bcryptjs');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 const PORT = process.env.PORT || 3004;
@@ -238,10 +239,12 @@ const securityHeaders = (req, res, next) => {
 app.use(securityHeaders);
 
 app.use((req, res, next) => {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-    res.set('Surrogate-Control', 'no-store');
+    if (req.path.startsWith('/api/')) {
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+        res.set('Surrogate-Control', 'no-store');
+    }
     next();
 });
 
@@ -404,12 +407,12 @@ app.use((req, res, next) => {
     next();
 });
 
-// Serve static files (HTML, CSS, JS) from frontend directory
-const frontendPath = path.join(__dirname, '..', 'frontend');
-app.use(express.static(frontendPath));
-
 // Compression middleware - compresses responses for faster loading
 app.use(compression());
+
+// Serve static files (HTML, CSS, JS) from frontend directory with caching
+const frontendPath = path.join(__dirname, '..', 'frontend');
+app.use(express.static(frontendPath, { maxAge: '1y', immutable: true }));
 
 // Middleware to parse JSON bodies (Move after static files to avoid parsing static requests)
 app.use(express.json({ limit: '1mb' }));
@@ -1802,6 +1805,181 @@ if (SELF_PING_URL && process.env.NODE_ENV === 'production') {
         }
     }, 14 * 60 * 1000); // Ping every 14 minutes (before Render's 15-min timeout)
 }
+
+// ========== MCQ VERIFICATION (runs on Render) ==========
+const VERIFICATION_CHECKPOINT = path.join(__dirname, 'verification_checkpoint.json');
+const VERIFICATION_REPORT = path.join(__dirname, 'verification_report.json');
+const VERIFICATION_SUMMARY = path.join(__dirname, 'verification_summary.txt');
+const BATCH_SIZE = 5;
+
+let verificationRunning = false;
+let verificationState = { total: 0, processed: 0, matched: 0, mismatched: 0, errors: 0, startTime: null };
+
+function getGeminiKey() {
+    const keys = (process.env.GEMINI_API_KEYS || '').split(',').map(k => k.trim()).filter(Boolean);
+    if (keys.length === 0) return null;
+    const dayUsed = verificationState.dailyUsed || 0;
+    const keyIndex = Math.floor(dayUsed / 1500) % keys.length;
+    if (keyIndex >= keys.length) return null;
+    verificationState.dailyUsed = (verificationState.dailyUsed || 0) + 1;
+    return new GoogleGenerativeAI(keys[keyIndex]).getGenerativeModel({ model: 'gemini-2.5-flash' });
+}
+
+function buildPrompt(batch) {
+    let p = 'Reply with ONLY numbers, one per line.\n\n';
+    batch.forEach((q, i) => {
+        p += `Q${i + 1}: ${q.question}\nOptions: ` + q.options.map((o, oi) => `${oi}:${o}`).join(', ') + `\n\n`;
+    });
+    p += `Reply with ${batch.length} numbers, one per line:`;
+    return p;
+}
+
+async function runVerification() {
+    if (verificationRunning) { console.log('[Verify] Already running'); return; }
+    verificationRunning = true;
+    verificationState.startTime = new Date();
+
+    try {
+        const allMcqs = await MCQ.find({}).lean();
+        verificationState.total = allMcqs.length;
+        console.log(`[Verify] Loaded ${allMcqs.length} MCQs`);
+
+        let results = { matched: 0, mismatched: 0, errors: 0, mismatches: [], errorsList: [] };
+        let processedCount = 0;
+        const totalBatches = Math.ceil(allMcqs.length / BATCH_SIZE);
+
+        for (let b = 0; b < totalBatches; b++) {
+            const start = b * BATCH_SIZE;
+            const batch = allMcqs.slice(start, start + BATCH_SIZE);
+
+            const model = getGeminiKey();
+            if (!model) {
+                console.log('[Verify] All API keys exhausted for today');
+                break;
+            }
+
+            let success = false;
+            for (let attempt = 0; attempt < 3 && !success; attempt++) {
+                try {
+                    const result = await model.generateContent(buildPrompt(batch));
+                    const text = result.response.text().trim();
+                    const lines = text.split('\n').map(l => l.trim()).filter(l => /^\d+$/.test(l));
+
+                    if (lines.length !== batch.length) {
+                        throw new Error(`Expected ${batch.length} answers, got ${lines.length}`);
+                    }
+
+                    for (let i = 0; i < batch.length; i++) {
+                        const q = batch[i];
+                        const aiAns = parseInt(lines[i]);
+                        if (aiAns === q.correctAnswer) {
+                            results.matched++;
+                        } else {
+                            results.mismatched++;
+                            results.mismatches.push({
+                                id: q._id,
+                                category: q.category || 'Unknown',
+                                topic: q.topic || 'Unknown',
+                                question: q.question,
+                                storedAnswerIndex: q.correctAnswer,
+                                storedAnswerText: q.options[q.correctAnswer],
+                                aiSuggestedIndex: aiAns,
+                                aiSuggestedText: q.options[aiAns] || 'N/A'
+                            });
+                        }
+                        processedCount++;
+                    }
+                    success = true;
+                    verificationState.processed = processedCount;
+                    verificationState.matched = results.matched;
+                    verificationState.mismatched = results.mismatched;
+                    verificationState.errors = results.errors;
+
+                } catch (e) {
+                    const msg = e.message || '';
+                    if (msg.includes('429') || msg.includes('quota') || msg.includes('Error fetching')) {
+                        console.log(`[Verify] Key exhausted, trying next...`);
+                        // dailyUsed already incremented, next call will use next key
+                        break;
+                    }
+                    console.log(`[Verify] Batch ${b} error (attempt ${attempt + 1}): ${msg.substring(0, 60)}`);
+                    if (attempt < 2) await new Promise(r => setTimeout(r, 5000));
+                }
+            }
+
+            if (!success) {
+                results.errors++;
+                processedCount += batch.length;
+                console.log(`[Verify] Batch ${b} failed`);
+            }
+
+            if (b % 50 === 0 || b === totalBatches - 1) {
+                const cp = { processedCount, currentKeyOffset: verificationState.dailyUsed, results, totalMcqs: allMcqs.length };
+                try { fs.writeFileSync(VERIFICATION_CHECKPOINT, JSON.stringify(cp)); } catch (e) {}
+                verificationState.processed = processedCount;
+            }
+
+            await new Promise(r => setTimeout(r, 6000));
+        }
+
+        // Generate report
+        const report = {
+            generatedAt: new Date().toISOString(),
+            summary: {
+                totalChecked: allMcqs.length,
+                matched: results.matched,
+                mismatched: results.mismatched,
+                errors: results.errors,
+                matchRate: ((results.matched / allMcqs.length) * 100).toFixed(2) + '%'
+            },
+            mismatches: results.mismatches,
+            errors: results.errorsList
+        };
+        fs.writeFileSync(VERIFICATION_REPORT, JSON.stringify(report, null, 2));
+        fs.writeFileSync(VERIFICATION_SUMMARY, `MCQ Verification Report\nTotal: ${allMcqs.length}\nMatched: ${results.matched}\nMismatched: ${results.mismatched}\nErrors: ${results.errors}`);
+        console.log(`[Verify] Complete! ${results.matched} matched, ${results.mismatched} mismatched`);
+    } catch (err) {
+        console.error('[Verify] Fatal:', err.message);
+    } finally {
+        verificationRunning = false;
+    }
+}
+
+// Verification routes
+app.get('/api/verify-mcqs/start', async (req, res) => {
+    if (!isDbConnected) return res.status(503).json({ error: 'Database not connected' });
+    if (verificationRunning) return res.json({ status: 'already_running', progress: verificationState });
+    if (!process.env.GEMINI_API_KEYS) return res.status(400).json({ error: 'GEMINI_API_KEYS not set in environment' });
+    
+    // Start in background
+    setImmediate(() => runVerification());
+    res.json({ status: 'started', message: 'Verification started in background', estimate: '~11 hours' });
+});
+
+app.get('/api/verify-mcqs/progress', (req, res) => {
+    res.json({
+        running: verificationRunning,
+        total: verificationState.total,
+        processed: verificationState.processed,
+        matched: verificationState.matched,
+        mismatched: verificationState.mismatched,
+        errors: verificationState.errors,
+        percent: verificationState.total > 0 ? ((verificationState.processed / verificationState.total) * 100).toFixed(1) + '%' : '0%',
+        startTime: verificationState.startTime,
+        elapsed: verificationState.startTime ? Math.floor((Date.now() - new Date(verificationState.startTime)) / 60000) + ' min' : 'N/A'
+    });
+});
+
+app.get('/api/verify-mcqs/report', (req, res) => {
+    if (!fs.existsSync(VERIFICATION_REPORT)) return res.status(404).json({ error: 'No report yet. Run verification first.' });
+    res.download(VERIFICATION_REPORT, 'verification_report.json');
+});
+
+app.get('/api/verify-mcqs/summary', (req, res) => {
+    if (!fs.existsSync(VERIFICATION_SUMMARY)) return res.status(404).json({ error: 'No summary yet.' });
+    res.type('text/plain').send(fs.readFileSync(VERIFICATION_SUMMARY, 'utf8'));
+});
+// ========== END VERIFICATION ==========
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
