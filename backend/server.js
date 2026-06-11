@@ -24,6 +24,20 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+// Import security and error handling middleware
+const { requestLogger, securityLogger } = require('./middleware/logger');
+const { errorHandler, notFoundHandler, asyncHandler, AppError } = require('./middleware/errorHandler');
+const { 
+    validateRegisterData, 
+    validateLoginData, 
+    validateMongoId,
+    validateMCQData,
+    validateSubjectData,
+    validateTopicData,
+    validateScoreData
+} = require('./middleware/validators');
+const sanitizers = require('./utils/sanitizers');
+
 const app = express();
 const PORT = process.env.PORT || 3004;
 
@@ -237,6 +251,10 @@ const securityHeaders = (req, res, next) => {
     next();
 };
 app.use(securityHeaders);
+
+// Add request logging middleware
+app.use(requestLogger);
+app.use(securityLogger);
 
 app.use((req, res, next) => {
     if (req.path.startsWith('/api/')) {
@@ -865,13 +883,39 @@ app.put('/api/mcqs/:id', adminAuth, async (req, res) => {
         return res.status(503).json({ message: 'Database not connected' });
     }
     try {
-        const mcq = await MCQ.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        // Validate MCQ ID
+        if (!sanitizers.sanitizeMongoId(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid MCQ ID' });
+        }
+        
+        // Validate MCQ data
+        const validation = validateMCQData(req.body);
+        if (!validation.isValid) {
+            return res.status(400).json({
+                message: 'Validation failed',
+                errors: validation.errors
+            });
+        }
+        
+        // Sanitize input
+        const sanitizedData = {
+            question: sanitizers.stripHtmlTags(req.body.question).trim(),
+            category: sanitizers.stripHtmlTags(req.body.category).trim(),
+            topic: sanitizers.stripHtmlTags(req.body.topic).trim(),
+            options: req.body.options.map(opt => sanitizers.stripHtmlTags(opt).trim()),
+            correctAnswer: req.body.correctAnswer,
+            explanation: req.body.explanation ? sanitizers.stripHtmlTags(req.body.explanation).trim() : '',
+            difficulty: req.body.difficulty || 'medium'
+        };
+        
+        const mcq = await MCQ.findByIdAndUpdate(req.params.id, sanitizedData, { new: true });
         if (!mcq) {
             return res.status(404).json({ message: 'MCQ not found' });
         }
         res.json(mcq);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('MCQ update error:', err.message);
+        res.status(500).json({ message: 'Failed to update MCQ. Please try again.' });
     }
 });
 
@@ -880,10 +924,31 @@ app.post('/api/mcqs', adminAuth, async (req, res) => {
         return res.status(503).json({ message: 'Database not connected' });
     }
     try {
-        const newMcq = await MCQ.create(req.body);
-        res.json(newMcq);
+        // Validate MCQ data
+        const validation = validateMCQData(req.body);
+        if (!validation.isValid) {
+            return res.status(400).json({
+                message: 'Validation failed',
+                errors: validation.errors
+            });
+        }
+        
+        // Sanitize input
+        const sanitizedData = {
+            question: sanitizers.stripHtmlTags(req.body.question).trim(),
+            category: sanitizers.stripHtmlTags(req.body.category).trim(),
+            topic: sanitizers.stripHtmlTags(req.body.topic).trim(),
+            options: req.body.options.map(opt => sanitizers.stripHtmlTags(opt).trim()),
+            correctAnswer: req.body.correctAnswer,
+            explanation: req.body.explanation ? sanitizers.stripHtmlTags(req.body.explanation).trim() : '',
+            difficulty: req.body.difficulty || 'medium'
+        };
+        
+        const newMcq = await MCQ.create(sanitizedData);
+        res.status(201).json(newMcq);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('MCQ creation error:', err.message);
+        res.status(500).json({ message: 'Failed to create MCQ. Please try again.' });
     }
 });
 
@@ -892,16 +957,21 @@ app.delete('/api/mcqs/:id', adminAuth, async (req, res) => {
         return res.status(503).json({ message: 'Database not connected' });
     }
     try {
-        const mcqId = req.params.id;
-        const result = await MCQ.findByIdAndDelete(mcqId);
+        // Validate MCQ ID
+        if (!sanitizers.sanitizeMongoId(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid MCQ ID' });
+        }
+        
+        const result = await MCQ.findByIdAndDelete(req.params.id);
         
         if (!result) {
             return res.status(404).json({ message: 'MCQ not found' });
         }
         
-        res.json({ message: 'Deleted successfully' });
+        res.json({ message: 'MCQ deleted successfully' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('MCQ deletion error:', err.message);
+        res.status(500).json({ message: 'Failed to delete MCQ. Please try again.' });
     }
 });
 
@@ -1120,53 +1190,81 @@ app.delete('/api/navitems/:id', adminAuth, async (req, res) => {
 
 // Scores Routes (Guest + Logged In users)
 app.post('/api/scores', async (req, res) => {
-    const { userId, topic, score, totalQuestions, percentage } = req.body;
-
-    if (topic === undefined || score === undefined || totalQuestions === undefined || percentage === undefined) {
-        return res.status(400).json({ message: 'Missing required score fields.' });
-    }
-
-    if (!isDbConnected) {
-        return res.status(503).json({ message: 'Database not connected' });
-    }
+    const { userId, topic, category, score, totalQuestions, percentage, answers, timeTaken, examMode } = req.body;
 
     try {
-        // Check if user is logged in (has valid session via csrf token)
-        let username = 'Guest';
-        let dbUserId = userId;
+        // Validate required fields
+        if (!topic || score === undefined || totalQuestions === undefined || percentage === undefined) {
+            return res.status(400).json({ 
+                message: 'Validation failed',
+                errors: ['Missing required score fields: topic, score, totalQuestions, percentage']
+            });
+        }
         
-        // Try to get user from session if csrf token is valid
-        try {
-            const csrfToken = req.headers['x-csrf-token'];
-            if (csrfToken) {
-                const decoded = jwt.verify(csrfToken, JWT_SECRET);
+        // Validate data types and ranges
+        if (typeof topic !== 'string' || topic.trim().length === 0 || topic.length > 200) {
+            return res.status(400).json({ message: 'Invalid topic' });
+        }
+        
+        if (typeof score !== 'number' || score < 0) {
+            return res.status(400).json({ message: 'Invalid score' });
+        }
+        
+        if (typeof totalQuestions !== 'number' || totalQuestions < 1) {
+            return res.status(400).json({ message: 'Invalid totalQuestions' });
+        }
+        
+        if (typeof percentage !== 'number' || percentage < 0 || percentage > 100) {
+            return res.status(400).json({ message: 'Invalid percentage' });
+        }
+        
+        if (timeTaken && (typeof timeTaken !== 'number' || timeTaken < 0)) {
+            return res.status(400).json({ message: 'Invalid timeTaken' });
+        }
+
+        if (!isDbConnected) {
+            return res.status(503).json({ message: 'Database not connected' });
+        }
+
+        // Check if user is logged in (has valid JWT cookie)
+        let username = 'Guest';
+        let dbUserId = userId || 'guest-' + Date.now();
+        
+        const token = req.cookies.jwt;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
                 const user = await User.findById(decoded.userId);
                 if (user) {
                     username = user.username;
                     dbUserId = user._id.toString();
                 }
+            } catch (e) {
+                // User token invalid, proceed as guest
             }
-        } catch (e) {
-            // User is guest, continue with guest submission
         }
-
+        
+        // Sanitize input data
+        const sanitizedTopic = sanitizers.stripHtmlTags(topic).trim();
+        const sanitizedCategory = category ? sanitizers.stripHtmlTags(category).trim() : '';
+        
         const scoreData = await Score.create({
-            userId: dbUserId,
+            userId: sanitizers.sanitizeMongoId(dbUserId) || dbUserId,
             username: username,
-            topic,
-            category: req.body.category || '',
+            topic: sanitizedTopic,
+            category: sanitizedCategory,
             score,
             totalQuestions,
             percentage,
-            answers: req.body.answers || [],
-            timeTaken: req.body.timeTaken || null,
-            examMode: req.body.examMode || 'none'
+            answers: Array.isArray(answers) ? answers.slice(0, 1000) : [],
+            timeTaken: timeTaken || null,
+            examMode: examMode || 'none'
         });
-
 
         res.json(scoreData);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Score submission error:', err.message);
+        res.status(500).json({ message: 'Failed to save score. Please try again.' });
     }
 });
 
@@ -1242,22 +1340,33 @@ app.get('/api/leaderboard/:topic', async (req, res) => {
 app.post('/api/users/login', loginLimiter, async (req, res) => {
     const { email, password } = req.body;
     
-    // Input validation
-    if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
-        return res.status(400).json({ message: 'Invalid input: email and password required.' });
-    }
-    
-    if (email.length > 254 || password.length > 128) {
-        return res.status(400).json({ message: 'Invalid input: email or password too long.' });
-    }
-    
-    if (!isDbConnected) {
-        return res.status(503).json({ message: 'Database not connected' });
-    }
-    
     try {
-        // Allow login with either email or username
-        const user = await User.findOne({ $or: [{ email }, { username: email }] });
+        // Validate input data
+        const validation = validateLoginData({ email, password });
+        if (!validation.isValid) {
+            return res.status(400).json({ 
+                message: 'Validation failed', 
+                errors: validation.errors 
+            });
+        }
+        
+        if (!isDbConnected) {
+            return res.status(503).json({ message: 'Database not connected' });
+        }
+        
+        // Sanitize email for consistent lookup
+        const sanitizedEmail = sanitizers.sanitizeEmail(email);
+        if (!sanitizedEmail) {
+            return res.status(401).json({ message: 'Invalid credentials.' });
+        }
+        
+        // Allow login with either email or username (case-insensitive)
+        const user = await User.findOne({ 
+            $or: [
+                { email: sanitizedEmail }, 
+                { username: email.toLowerCase() }
+            ] 
+        });
         
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials.' });
@@ -1295,6 +1404,7 @@ app.post('/api/users/login', loginLimiter, async (req, res) => {
             maxAge: 24 * 60 * 60 * 1000
         });
         
+        // Sanitize response - don't expose sensitive fields
         res.json({
             userId: user._id,
             username: user.username,
@@ -1302,63 +1412,65 @@ app.post('/api/users/login', loginLimiter, async (req, res) => {
             isAdmin: user.isAdmin
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Login error:', err.message);
+        res.status(500).json({ message: 'Login failed. Please try again.' });
     }
 });
 
 // Register Route
 app.post('/api/users/register', loginLimiter, async (req, res) => {
-    const { username, email, password } = req.body;
-    
-    // Input validation
-    if (!username || !email || !password) {
-        return res.status(400).json({ message: 'Missing required fields.' });
-    }
-    
-    if (typeof username !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
-        return res.status(400).json({ message: 'Invalid input format.' });
-    }
-    
-    if (username.length < 3 || username.length > 50) {
-        return res.status(400).json({ message: 'Username must be 3-50 characters.' });
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (email.length > 254 || !emailRegex.test(email)) {
-        return res.status(400).json({ message: 'Invalid email format.' });
-    }
-    
-    if (password.length < 8 || password.length > 128) {
-        return res.status(400).json({ message: 'Password must be 8-128 characters.' });
-    }
-    
-    if (!isDbConnected) {
-        return res.status(503).json({ message: 'Database not connected' });
-    }
+    const { username, email, password, confirmPassword } = req.body;
     
     try {
+        // Validate input data
+        const validation = validateRegisterData({ username, email, password, confirmPassword });
+        if (!validation.isValid) {
+            return res.status(400).json({ 
+                message: 'Validation failed', 
+                errors: validation.errors 
+            });
+        }
+        
+        if (!isDbConnected) {
+            return res.status(503).json({ message: 'Database not connected' });
+        }
+        
+        // Sanitize email for consistent lookup
+        const sanitizedEmail = sanitizers.sanitizeEmail(email);
+        if (!sanitizedEmail) {
+            return res.status(400).json({ message: 'Invalid email format.' });
+        }
+        
         // Check if email or username already exists
-        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+        const existingUser = await User.findOne({ 
+            $or: [{ email: sanitizedEmail }, { username: username.toLowerCase() }] 
+        });
         if (existingUser) {
-            if (existingUser.email === email) {
-                return res.status(400).json({ message: 'Email already in use.' });
+            if (existingUser.email === sanitizedEmail) {
+                return res.status(409).json({ message: 'Email already in use.' });
             }
-            return res.status(400).json({ message: 'Username already in use.' });
+            return res.status(409).json({ message: 'Username already in use.' });
         }
         
         // Hash password before storing
         const hashedPassword = await bcryptjs.hash(password, 10);
         
         const newUser = await User.create({ 
-            username, 
-            email, 
+            username: username.toLowerCase(), 
+            email: sanitizedEmail, 
             password: hashedPassword, 
             isAdmin: false 
         });
         
-        res.status(201).json({ message: 'User registered successfully.' });
+        // Sanitize response - don't expose sensitive fields
+        res.status(201).json({ 
+            message: 'User registered successfully.',
+            userId: newUser._id
+        });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        // Generic error message to prevent information leakage
+        console.error('Registration error:', err.message);
+        res.status(500).json({ message: 'Registration failed. Please try again.' });
     }
 });
 
@@ -1985,3 +2097,13 @@ app.get('/api/verify-mcqs/summary', (req, res) => {
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// ============================================================
+// ERROR HANDLING (Must be after all routes)
+// ============================================================
+
+// 404 Not Found handler
+app.use(notFoundHandler);
+
+// Global error handler (must be last)
+app.use(errorHandler);
