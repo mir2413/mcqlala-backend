@@ -18,7 +18,7 @@ if (!JWT_SECRET) {
 const { connectDB, getDbStatus } = require('./config/database');
 const { allowedOrigins } = require('./config/constants');
 const { securityHeaders, apiCacheControl, sensitiveFileBlock, securityLogger, errorHandler } = require('./middleware/security');
-const { csrfSecretMiddleware, csrfProtection, csrfTokens, sanitizeInput } = require('./middleware/auth');
+const { csrfSecretMiddleware, csrfProtection, sanitizeInput } = require('./middleware/auth');
 const { limiter, loginLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
@@ -77,7 +77,12 @@ app.use(express.static(path.join(__dirname, '..', 'frontend'), {
 
 app.use(sensitiveFileBlock);
 
-app.use('/api/csrf-token', csrfTokens);
+app.get('/api/csrf-token', (req, res) => {
+    const Tokens = require('csrf');
+    const tokens = new Tokens();
+    const token = tokens.create(req.csrfSecret);
+    res.json({ csrfToken: token });
+});
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/auth'));
 app.use('/api/subjects', require('./routes/subjects'));
