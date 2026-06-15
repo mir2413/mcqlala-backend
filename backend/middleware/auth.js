@@ -6,7 +6,7 @@ const { getDbStatus } = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-function auth(req, res, next) {
+async function auth(req, res, next) {
     const token = req.cookies.jwt;
     if (!token) {
         return res.status(401).json({ message: 'Unauthorized: Missing token.' });
@@ -16,7 +16,7 @@ function auth(req, res, next) {
         if (!getDbStatus()) {
             return res.status(503).json({ message: 'Database not connected' });
         }
-        const user = User.findById(decoded.userId);
+        const user = await User.findById(decoded.userId);
         if (!user) {
             return res.status(401).json({ message: 'Unauthorized: User not found.' });
         }
@@ -27,7 +27,7 @@ function auth(req, res, next) {
     }
 }
 
-function adminAuth(req, res, next) {
+async function adminAuth(req, res, next) {
     const token = req.cookies.jwt;
     if (!token) {
         return res.status(401).json({ message: 'Unauthorized: Missing token.' });
@@ -37,7 +37,7 @@ function adminAuth(req, res, next) {
         if (!getDbStatus()) {
             return res.status(503).json({ message: 'Database not connected' });
         }
-        const user = User.findById(decoded.userId);
+        const user = await User.findById(decoded.userId);
         if (!user || !user.isAdmin) {
             return res.status(403).json({ message: 'Forbidden: Admin access required.' });
         }
