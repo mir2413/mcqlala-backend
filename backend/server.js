@@ -27,11 +27,11 @@ const PORT = process.env.PORT || 3004;
 connectDB();
 
 app.use(securityHeaders);
-app.use(csrfSecretMiddleware);
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+app.use(csrfSecretMiddleware);
 app.use(csrfProtection);
 app.use(sanitizeInput);
 
