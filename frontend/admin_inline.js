@@ -1535,14 +1535,26 @@
             if (mismatches.length === 0) {
                 container.innerHTML = '<p style="color: #2ecc71; padding: 15px; background: var(--bg-primary); border-radius: 8px;">All MCQ answers match! No issues found.</p>';
             } else {
-                container.innerHTML = mismatches.map((m, i) => `
-                    <div style="padding: 15px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #e74c3c;">
+                let html = `
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px; padding: 10px; background: var(--bg-primary); border-radius: 8px;">
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 14px;">
+                            <input type="checkbox" id="selectAllMismatches" onchange="toggleSelectAllMismatches(this)" style="width: 16px; height: 16px; cursor: pointer;"> Select All
+                        </label>
+                        <button onclick="deleteSelectedMismatches()" class="delete-btn" style="padding: 6px 14px; font-size: 13px;"><i class="fa-solid fa-trash"></i> Delete Selected</button>
+                        <span id="selectedCount" style="font-size: 13px; color: var(--text-muted);"></span>
+                    </div>
+                `;
+                html += mismatches.map((m, i) => `
+                    <div id="mismatch-${i}" style="padding: 15px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #e74c3c;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-weight: 600; color: var(--primary);">#${m.questionNumber || (i + 1)}</span>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" class="mismatch-checkbox" value="${m.id}" data-index="${i}" onchange="updateSelectedCount()" style="width: 16px; height: 16px; cursor: pointer;">
+                                <span style="font-weight: 600; color: var(--primary);">#${m.questionNumber || (i + 1)}</span>
+                            </div>
                             <span style="font-size: 12px; color: var(--text-muted);">${escapeHtml(m.category)} &gt; ${escapeHtml(m.topic)}</span>
                         </div>
                         <p style="margin: 0 0 10px 0; font-weight: 500;">${escapeHtml(m.question)}</p>
-                        <div style="display: flex; gap: 20px; font-size: 13px; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 20px; font-size: 13px; flex-wrap: wrap; margin-bottom: 10px;">
                             <div style="padding: 6px 10px; background: rgba(231,76,60,0.1); border-radius: 4px;">
                                 <span style="color: #e74c3c;">Stored:</span>
                                 <strong>${escapeHtml(m.storedAnswerText)}</strong> (index ${m.storedAnswerIndex})
@@ -1552,11 +1564,107 @@
                                 <strong>${escapeHtml(m.aiSuggestedText)}</strong> (index ${m.aiSuggestedIndex})
                             </div>
                         </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button onclick="fixMismatchMCQ('${m.id}', ${m.aiSuggestedIndex}, ${i})" style="padding: 5px 12px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"><i class="fa-solid fa-check"></i> Fix Answer</button>
+                            <button onclick="editMismatchMCQ('${m.id}')" style="padding: 5px 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"><i class="fa-solid fa-edit"></i> Edit</button>
+                            <button onclick="deleteMismatchMCQ('${m.id}', ${i})" style="padding: 5px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;"><i class="fa-solid fa-trash"></i> Delete</button>
+                        </div>
                     </div>
                 `).join('');
+                container.innerHTML = html;
             }
             document.getElementById('verifyReportSection').style.display = 'block';
         } catch (e) {
             document.getElementById('verifyReportSection').style.display = 'none';
+        }
+    };
+
+    window.toggleSelectAllMismatches = function(checkbox) {
+        document.querySelectorAll('.mismatch-checkbox').forEach(cb => { cb.checked = checkbox.checked; });
+        updateSelectedCount();
+    };
+
+    window.updateSelectedCount = function() {
+        const count = document.querySelectorAll('.mismatch-checkbox:checked').length;
+        const el = document.getElementById('selectedCount');
+        if (el) el.textContent = count > 0 ? `${count} selected` : '';
+    };
+
+    window.fixMismatchMCQ = async function(id, newAnswerIndex, index) {
+        if (!confirm('Update this question\'s answer to what AI suggests?')) return;
+        try {
+            const response = await fetch(`${API_BASE_URL}/mcqs/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ correctAnswer: newAnswerIndex })
+            });
+            if (response.ok) {
+                const card = document.getElementById('mismatch-' + index);
+                if (card) {
+                    card.style.borderLeftColor = '#2ecc71';
+                    const storedDiv = card.querySelector('div > div');
+                    if (storedDiv) {
+                        const strongEl = storedDiv.querySelector('strong');
+                        if (strongEl) strongEl.textContent = card.querySelectorAll('strong')[1].textContent;
+                    }
+                }
+                showSuccess('Answer fixed!');
+                loadStats();
+            } else {
+                showError('Failed to update answer');
+            }
+        } catch (e) {
+            showError('Error: ' + e.message);
+        }
+    };
+
+    window.editMismatchMCQ = function(id) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('view-mcqs').classList.add('active');
+        document.querySelector('[data-tab="view-mcqs"]').classList.add('active');
+        window.editMCQ(id);
+    };
+
+    window.deleteMismatchMCQ = async function(id, index) {
+        if (!confirm('Delete this question permanently?')) return;
+        try {
+            const response = await fetch(`${API_BASE_URL}/mcqs/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                const card = document.getElementById('mismatch-' + index);
+                if (card) card.remove();
+                showSuccess('Question deleted!');
+                loadStats();
+            } else {
+                showError('Failed to delete');
+            }
+        } catch (e) {
+            showError('Error: ' + e.message);
+        }
+    };
+
+    window.deleteSelectedMismatches = async function() {
+        const checkboxes = document.querySelectorAll('.mismatch-checkbox:checked');
+        const ids = Array.from(checkboxes).map(cb => cb.value);
+        if (ids.length === 0) { showError('Select questions to delete.'); return; }
+        if (!confirm(`Delete ${ids.length} question(s) permanently?`)) return;
+        try {
+            const response = await fetch(`${API_BASE_URL}/mcqs/bulk-delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids })
+            });
+            if (response.ok) {
+                ids.forEach(id => {
+                    const cb = document.querySelector(`.mismatch-checkbox[value="${id}"]`);
+                    if (cb) cb.closest('[id^="mismatch-"]').remove();
+                });
+                showSuccess(`${ids.length} question(s) deleted!`);
+                loadStats();
+            } else {
+                showError('Failed to delete');
+            }
+        } catch (e) {
+            showError('Error: ' + e.message);
         }
     };
