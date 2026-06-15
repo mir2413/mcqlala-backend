@@ -83,11 +83,10 @@ app.get('/api/csrf-token', (req, res) => {
     const token = tokens.create(req.csrfSecret);
     res.json({ csrfToken: token });
 });
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/auth'));
+app.use('/api', require('./routes/auth'));
 app.use('/api/subjects', require('./routes/subjects'));
 app.use('/api/mcqs', require('./routes/mcqs'));
-app.use('/api/scores', require('./routes/scores'));
+app.use('/api', require('./routes/scores'));
 app.use('/api/contact', require('./routes/contact'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/pdfs', require('./routes/pdfs'));
