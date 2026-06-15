@@ -1265,7 +1265,6 @@ function removeToast(toast) {
 
 // === Session Timeout Warning ===
 let sessionCheckInterval;
-let sessionWarningShown = false;
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const WARNING_BEFORE = 2 * 60 * 1000; // 2 minutes before
 
@@ -1288,8 +1287,18 @@ function checkSessionTimeout() {
         return;
     }
     
-    if (timeLeft <= WARNING_BEFORE && !sessionWarningShown) {
-        sessionWarningShown = true;
+    // Check if warning was already shown (persists across page navigation via sessionStorage)
+    const warningKey = 'sessionWarningShown';
+    const warningShownAt = sessionStorage.getItem(warningKey);
+    const now = Date.now();
+    
+    // Reset warning flag if it's been more than WARNING_BEFORE ms since it was shown
+    if (warningShownAt && (now - parseInt(warningShownAt)) > WARNING_BEFORE) {
+        sessionStorage.removeItem(warningKey);
+    }
+    
+    if (timeLeft <= WARNING_BEFORE && !sessionStorage.getItem(warningKey)) {
+        sessionStorage.setItem(warningKey, now.toString());
         showSessionWarning(timeLeft);
     }
 }
@@ -1330,7 +1339,7 @@ function showSessionWarning(timeLeft) {
     window.extendSession = function() {
         clearInterval(countdown);
         localStorage.setItem('lastActivity', Date.now().toString());
-        sessionWarningShown = false;
+        sessionStorage.removeItem('sessionWarningShown');
         modal.remove();
     };
     

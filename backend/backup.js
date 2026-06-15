@@ -26,10 +26,10 @@ class DatabaseBackup {
     async exportDatabase() {
         try {
             this.ensureBackupDir();
-            
+
             const filename = this.getBackupFilename();
             const filepath = path.join(this.backupDir, filename);
-            
+
             // Get all collections
             const collections = await mongoose.connection.db.listCollections().toArray();
             const backupData = {
@@ -46,13 +46,13 @@ class DatabaseBackup {
 
             // Write to file
             fs.writeFileSync(filepath, JSON.stringify(backupData, null, 2));
-            
+
             console.log(`[BACKUP] ✅ Database backup created: ${filename}`);
             console.log(`[BACKUP] 📁 Location: ${filepath}`);
-            
+
             // Clean up old backups
             await this.cleanOldBackups();
-            
+
             return { success: true, filename, filepath };
         } catch (error) {
             console.error('[BACKUP] ❌ Backup failed:', error.message);
@@ -61,7 +61,7 @@ class DatabaseBackup {
     }
 
     // Clean up old backups (keep only maxBackups)
-    async cleanOldBackups() {
+    async cleanOldBackups() { // eslint-disable-line require-await
         try {
             const files = fs.readdirSync(this.backupDir)
                 .filter(file => file.startsWith('backup-') && file.endsWith('.json'))
@@ -89,19 +89,19 @@ class DatabaseBackup {
     async restoreDatabase(filename) {
         try {
             const filepath = path.join(this.backupDir, filename);
-            
+
             if (!fs.existsSync(filepath)) {
                 throw new Error(`Backup file not found: ${filename}`);
             }
 
             const backupData = JSON.parse(fs.readFileSync(filepath, 'utf8'));
-            
+
             // Restore each collection
             for (const [collectionName, data] of Object.entries(backupData.collections)) {
                 if (data.length > 0) {
                     // Drop existing collection
                     await mongoose.connection.db.dropCollection(collectionName).catch(() => {});
-                    
+
                     // Insert backup data
                     await mongoose.connection.db.collection(collectionName).insertMany(data);
                     console.log(`[RESTORE] ✅ Restored ${data.length} documents to ${collectionName}`);
@@ -142,7 +142,7 @@ class DatabaseBackup {
     // Schedule automatic backups
     scheduleBackup(cronExpression = '0 2 * * *') { // Default: 2 AM daily
         console.log(`[BACKUP] 📅 Scheduled automatic backup: ${cronExpression}`);
-        
+
         cron.schedule(cronExpression, async () => {
             console.log('[BACKUP] ⏰ Running scheduled backup...');
             await this.exportDatabase();

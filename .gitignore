@@ -9,3 +9,4 @@ backend/verification_summary.txt
 backend/verification_mcqs.json
 backend/verification_output.log
 backend/verification_error.log
+backend/pdfs/

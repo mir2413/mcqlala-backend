@@ -46,6 +46,7 @@
             <button class="tab-btn" data-tab="view-messages" data-onclick="switchTab" data-args="[event, 'view-messages']"><i class="fa-solid fa-envelope"></i> Messages <span id="msgBadge" class="badge" style="display:none"></span></button>
             <button class="tab-btn" data-tab="manage-pdfs" data-onclick="switchTab" data-args="[event, 'manage-pdfs']"><i class="fa-solid fa-file-pdf"></i> Manage PDFs</button>
             <button class="tab-btn" data-tab="settings" data-onclick="switchTab" data-args="[event, 'settings']"><i class="fa-solid fa-cog"></i> Settings</button>
+            <button class="tab-btn" data-tab="mcq-verify" data-onclick="switchTab" data-args="[event, 'mcq-verify']"><i class="fa-solid fa-shield-check"></i> MCQ Verify</button>
         </div>
 
         <div id="successMessage" class="success-message"></div>
@@ -339,6 +340,48 @@
                     <input type="password" id="newAdminPassword" name="newAdminPassword" placeholder="New Password" style="padding: 10px; border: 1px solid var(--border); border-radius: 4px; width: 100%; margin-bottom: 10px;">
                     <button data-onclick="changeAdminPassword" class="btn-primary">Update Password</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- MCQ Verify Tab -->
+        <div id="mcq-verify" class="tab-content">
+            <h3><i class="fa-solid fa-shield-check"></i> MCQ Answer Verification</h3>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">
+                Use AI to verify that your stored MCQ answers are correct. The system checks each question's answer against Llama 3.3-70B (Groq) and generates a report of mismatches.
+            </p>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button id="startVerifyBtn" class="btn-primary" data-onclick="startMCQVerification" style="padding: 10px 20px;">
+                    <i class="fa-solid fa-play"></i> Start Verification
+                </button>
+                <button id="viewReportBtn" class="btn-secondary" data-onclick="loadMCQVerifyReport" style="padding: 10px 20px; display: none;">
+                    <i class="fa-solid fa-file-lines"></i> View Report
+                </button>
+                <button id="downloadReportBtn" class="btn-secondary" style="padding: 10px 20px; display: none;" onclick="window.open('/api/verify-mcqs/report', '_blank')">
+                    <i class="fa-solid fa-download"></i> Download JSON
+                </button>
+            </div>
+
+            <div id="verifyStatus" style="padding: 15px; background: var(--bg-primary); border-radius: 8px; margin-bottom: 20px; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <strong id="verifyStatusText">Status: Idle</strong>
+                    <span id="verifyElapsed" style="color: var(--text-muted); font-size: 13px;"></span>
+                </div>
+                <div style="background: var(--border); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px;">
+                    <div id="verifyProgressBar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.5s; border-radius: 4px;"></div>
+                </div>
+                <div style="display: flex; gap: 20px; font-size: 14px; flex-wrap: wrap;">
+                    <span>Processed: <strong id="verifyProcessed">0</strong> / <strong id="verifyTotal">0</strong></span>
+                    <span style="color: #2ecc71;">Matched: <strong id="verifyMatched">0</strong></span>
+                    <span style="color: #e74c3c;">Mismatched: <strong id="verifyMismatched">0</strong></span>
+                    <span style="color: #f39c12;">Errors: <strong id="verifyErrors">0</strong></span>
+                </div>
+            </div>
+
+            <div id="verifyReportSection" style="display: none;">
+                <h4>Mismatched Questions</h4>
+                <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 10px;">These questions have different answers stored vs. what AI suggests.</p>
+                <div id="verifyReportList" style="max-height: 500px; overflow-y: auto;"></div>
             </div>
         </div>
     </div>

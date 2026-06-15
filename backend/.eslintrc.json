@@ -1,0 +1,52 @@
+{
+    "env": {
+        "node": true,
+        "commonjs": true,
+        "es2021": true,
+        "jest": true
+    },
+    "extends": ["eslint:recommended"],
+    "parserOptions": {
+        "ecmaVersion": "latest"
+    },
+    "rules": {
+        "no-unused-vars": ["error", { "argsIgnorePattern": "^_|^req|^res|^next" }],
+        "no-console": "off",
+        "no-process-exit": "off",
+        "eqeqeq": "error",
+        "no-var": "error",
+        "prefer-const": "warn",
+        "no-throw-literal": "error",
+        "no-return-await": "warn",
+        "require-await": "warn",
+        "no-async-promise-executor": "error",
+        "no-await-in-loop": "off",
+        "no-promise-executor-return": "error",
+        "no-template-curly-in-string": "off",
+        "curly": "warn",
+        "no-fallthrough": "error",
+        "no-unreachable": "error",
+        "no-duplicate-case": "error",
+        "no-empty": "error",
+        "no-self-compare": "error",
+        "no-unused-expressions": "warn",
+        "no-useless-concat": "warn",
+        "no-useless-return": "warn",
+        "prefer-template": "off",
+        "no-param-reassign": "off",
+        "consistent-return": "off",
+        "no-shadow": "off",
+        "brace-style": ["warn", "1tbs"],
+        "comma-dangle": ["warn", "never"],
+        "indent": ["warn", 4],
+        "no-trailing-spaces": "warn",
+        "no-multiple-empty-lines": ["warn", { "max": 2 }],
+        "quotes": ["warn", "single", { "avoidEscape": true, "allowTemplateLiterals": true }],
+        "semi": ["warn", "always"],
+        "max-len": ["warn", { "code": 150, "ignoreStrings": true, "ignoreComments": true, "ignoreUrls": true, "ignoreTemplateLiterals": true }],
+        "object-curly-spacing": ["warn", "always"],
+        "array-bracket-spacing": ["warn", "never"],
+        "no-prototype-builtins": "warn"
+    },
+    "ignorePatterns": ["node_modules/", "__tests__/", "pdfs/", "*.test.js", "*.spec.js"]
+}
