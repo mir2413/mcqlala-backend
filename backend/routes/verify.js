@@ -43,16 +43,41 @@ function getGroqClient() {
 function buildMessages(batch) {
     let qText = '';
     batch.forEach((q, i) => {
-        qText += `Q${i + 1}: ${q.question}\nOptions: ${q.options.map((o, oi) => `${oi}:${o}`).join(', ')}\n\n`;
+        qText += `Q${i + 1}: ${q.question}\n`;
+        qText += `Options:\n`;
+        q.options.forEach((o, oi) => {
+            qText += `  ${oi}: ${o}\n`;
+        });
+        qText += `\n`;
     });
     return [
         {
             role: 'system',
-            content: 'You are an MCQ answer checker. Given multiple-choice questions, reply with ONLY the correct option index numbers, one per line. Nothing else.'
+            content: [
+                'You are an expert MCQ answer checker with deep knowledge across ALL subjects:',
+                '- History (Indian, World, Ancient, Medieval, Modern)',
+                '- Geography (Physical, Indian, World, Climate, Maps)',
+                '- Polity (Indian Constitution, Governance, Political Systems)',
+                '- Economics (Micro, Macro, Indian Economy, Budget, Banking)',
+                '- Mathematics (Arithmetic, Algebra, Geometry, Trigonometry, Statistics)',
+                '- Reasoning (Logical, Verbal, Non-Verbal, Puzzles)',
+                '- Computer Science (Programming, Networking, OS, Databases)',
+                '- General Science (Physics, Chemistry, Biology)',
+                '- Current Affairs and General Knowledge',
+                '',
+                'RULES:',
+                '1. Answer each question based on your knowledge. Think carefully before answering.',
+                '2. Option indexing is ZERO-BASED: Option 1 = index 0, Option 2 = index 1, Option 3 = index 2, Option 4 = index 3.',
+                '3. If a question has 4 options labeled A/B/C/D, map them: A=0, B=1, C=2, D=3.',
+                '4. Reply with ONLY the correct index number for each question, one per line.',
+                '5. Do NOT reply with option text, explanations, or anything else — ONLY numbers.',
+                '6. If you are unsure, still give your best educated guess based on the most likely answer.',
+                '7. For math/logic questions, verify by calculation before answering.'
+            ].join('\n')
         },
         {
             role: 'user',
-            content: `Reply with ONLY ${batch.length} numbers, one per line.\n\n${qText}Reply with ${batch.length} numbers, one per line:`
+            content: `Answer these ${batch.length} MCQs. Reply with ONLY ${batch.length} index numbers (0-3), one per line.\n\nIMPORTANT: Option 1=index 0, Option 2=index 1, Option 3=index 2, Option 4=index 3.\n\n${qText}Reply with ${batch.length} numbers, one per line (no explanations):`
         }
     ];
 }
@@ -122,7 +147,7 @@ async function runVerification() {
                         messages: buildMessages(batch),
                         model: 'llama-3.3-70b-versatile',
                         temperature: 0,
-                        max_completion_tokens: 100
+                        max_completion_tokens: 200
                     });
                     const text = completion.choices[0].message.content.trim();
                     const lines = text.split('\n').map(l => l.trim()).filter(l => /^\d+$/.test(l));
