@@ -115,26 +115,34 @@
 
         async function loadStats() {
             try {
-                const response = await fetch(`${API_BASE_URL}/mcqs-category/all`);
-                const mcqs = await response.json();
-                
+                const statsRes = await fetch(`${API_BASE_URL}/stats`);
+                const stats = await statsRes.json();
+
+                let structure = [];
+                try {
+                    const structRes = await fetch(`${API_BASE_URL}/mcqs-category/all`);
+                    structure = await structRes.json();
+                } catch(e) { /* structure optional */ }
+
+                const totalTopics = structure.reduce((sum, cat) => sum + (cat.topics ? cat.topics.length : 0), 0);
+
                 let visitorStats = { total: 0, today: 0, week: 0, month: 0 };
                 try {
                     const visitorRes = await fetch(`${API_BASE_URL}/visitors/stats`);
                     visitorStats = await visitorRes.json();
                 } catch(e) { /* visitor stats optional */ }
-                
+
                 const statsHtml = `
                     <div class="stat-card">
-                        <h3>${mcqs.length || 0}</h3>
+                        <h3>${stats.totalMCQs || 0}</h3>
                         <p>Total Questions</p>
                     </div>
                     <div class="stat-card">
-                        <h3>${new Set(mcqs.map(m => m.category)).size || 0}</h3>
+                        <h3>${stats.totalSubjects || 0}</h3>
                         <p>Categories</p>
                     </div>
                     <div class="stat-card">
-                        <h3>${new Set(mcqs.map(m => m.topic)).size || 0}</h3>
+                        <h3>${totalTopics}</h3>
                         <p>Topics</p>
                     </div>
                     <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-align: center;">
