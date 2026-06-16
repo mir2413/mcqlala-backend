@@ -237,7 +237,7 @@ async function runVerification(category, topic) {
                 verificationState.processed = processedCount;
             }
 
-            await new Promise(r => setTimeout(r, 3000)); // eslint-disable-line no-promise-executor-return
+            await new Promise(r => setTimeout(r, 6000)); // eslint-disable-line no-promise-executor-return
         }
 
         const filterLabel = getFilterLabel(category, topic);
