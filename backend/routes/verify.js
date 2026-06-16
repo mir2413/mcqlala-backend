@@ -52,7 +52,7 @@ function buildMessages(batch) {
     return [
         {
             role: 'system',
-            content: 'Answer MCQs. Reply with ONLY the zero-based option index (0-3) per question, one per line. No explanations.'
+            content: 'Answer MCQs. Reply with ONLY the zero-based option index (0-3) per question, one per line. Always answer, never refuse. No explanations.'
         },
         {
             role: 'user',
