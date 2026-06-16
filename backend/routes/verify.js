@@ -186,6 +186,15 @@ async function runVerification() {
                         await new Promise(r => setTimeout(r, 30000)); // eslint-disable-line no-promise-executor-return
                         break;
                     }
+                    if (msg.includes('400') || msg.includes('restricted') || msg.includes('Organization')) {
+                        console.error(`[Verify] API key restricted/unavailable. Stopping verification.`);
+                        saveCheckpoint({
+                            processedCount, currentKeyOffset: verificationState.dailyUsed,
+                            results, totalMcqs: allMcqs.length, date: getTodayKey()
+                        });
+                        verificationRunning = false;
+                        return;
+                    }
                     console.log(`[Verify] Batch ${b} error (attempt ${attempt + 1}): ${msg.substring(0, 80)}`);
                     if (attempt < 2) {
                         await new Promise(r => setTimeout(r, 5000)); // eslint-disable-line no-promise-executor-return
