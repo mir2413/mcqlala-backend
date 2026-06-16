@@ -56,7 +56,7 @@ router.post('/users/login', loginLimiter, async (req, res) => {
     }
 
     try {
-        const user = await User.findOne({ $or: [{ email }, { username: email }] }).select('-password');
+        const user = await User.findOne({ $or: [{ email }, { username: email }] });
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials.' });
         }
