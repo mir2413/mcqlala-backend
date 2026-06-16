@@ -37,10 +37,18 @@ router.post('/', adminAuth, async (req, res) => {
         return res.status(503).json({ message: 'Database not connected' });
     }
     try {
-        const newSubject = await Subject.create({ ...req.body, topics: [] });
+        const { name, description } = req.body;
+        if (!name) {
+            return res.status(400).json({ message: 'Subject name is required.' });
+        }
+        const newSubject = await Subject.create({
+            name: String(name).substring(0, 200),
+            description: String(description || '').substring(0, 1000),
+            topics: []
+        });
         res.json(newSubject);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Failed to create subject.' });
     }
 });
 
@@ -49,13 +57,17 @@ router.put('/:id', adminAuth, async (req, res) => {
         return res.status(503).json({ message: 'Database not connected' });
     }
     try {
-        const subject = await Subject.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const { name, description } = req.body;
+        const allowedFields = {};
+        if (name !== undefined) allowedFields.name = String(name).substring(0, 200);
+        if (description !== undefined) allowedFields.description = String(description).substring(0, 1000);
+        const subject = await Subject.findByIdAndUpdate(req.params.id, allowedFields, { new: true });
         if (!subject) {
             return res.status(404).json({ message: 'Subject not found' });
         }
         res.json(subject);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Failed to update subject.' });
     }
 });
 
@@ -67,7 +79,7 @@ router.delete('/:id', adminAuth, async (req, res) => {
         await Subject.findByIdAndDelete(req.params.id);
         res.json({ message: 'Deleted' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Failed to delete subject.' });
     }
 });
 
@@ -76,15 +88,19 @@ router.post('/:id/topics', adminAuth, async (req, res) => {
         return res.status(503).json({ message: 'Database not connected' });
     }
     try {
+        const { name } = req.body;
+        if (!name || typeof name !== 'string') {
+            return res.status(400).json({ message: 'Topic name is required.' });
+        }
         const subject = await Subject.findById(req.params.id);
         if (!subject) {
             return res.status(404).json({ message: 'Subject not found' });
         }
-        subject.topics.push({ name: req.body.name });
+        subject.topics.push({ name: String(name).substring(0, 200) });
         await subject.save();
         res.json(subject.topics[subject.topics.length - 1]);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Failed to add topic.' });
     }
 });
 

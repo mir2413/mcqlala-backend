@@ -50,7 +50,7 @@ function getCacheVersion() {
         }
         
         // Reload to get fresh content
-        window.location.reload(true);
+        window.location.reload();
     }
 })();
 
@@ -166,21 +166,17 @@ function checkAuth() {
     const page = path.split('/').pop();
     const user = getCurrentUser();
 
-    console.log('🔍 checkAuth() called');
+    console.log('checkAuth() called');
     
     // Pages that require login
     const protectedPages = ['admin.html', 'profile.html'];
 
     // Only redirect if NOT logged in AND trying to access a protected page
     if (!isLogged && protectedPages.includes(page)) {
-        console.log('❌ Restricted Access - redirecting to login');
         sessionStorage.setItem('authRedirect', 'Please log in to access that page.');
         window.location.href = 'login.html';
     } else if (page === 'admin.html' && !user.isAdmin) {
-        console.log('❌ Admin Access Denied - redirecting to home');
         window.location.href = 'index.html';
-    } else {
-        console.log('   ✅ Access granted:', localStorage.getItem('username') || 'Guest');
     }
 }
 
@@ -357,14 +353,14 @@ async function submitContactForm(event) {
         });
         
         if (response.ok) {
-            alert('Message sent successfully!');
+            showToast('Message sent successfully!', 'success');
             form.reset();
         } else {
-            alert('Failed to send message.');
+            showToast('Failed to send message.', 'error');
         }
     } catch (error) {
         console.error('Error sending message:', error);
-        alert('Error sending message.');
+        showToast('Error sending message.', 'error');
     } finally {
         if (btn) {
             btn.disabled = false;
@@ -524,10 +520,10 @@ window.saveSiteSettings = async function(e) {
             body: JSON.stringify({ title, footer })
         });
         if (res.ok) {
-            alert('Settings saved successfully!');
+            showToast('Settings saved successfully!', 'success');
             window.loadSiteSettings(); // Refresh
-        } else alert('Failed to save settings.');
-    } catch (err) { console.error(err); alert('Error saving settings.'); } 
+        } else showToast('Failed to save settings.', 'error');
+    } catch (err) { console.error(err); showToast('Error saving settings.', 'error'); } 
     finally { btn.textContent = originalText; btn.disabled = false; }
 };
 
@@ -616,7 +612,7 @@ window.addNavItem = async function(e) {
             window.loadNavItemsAdmin();
             loadNavLinks(); // Refresh main menu
         }
-    } catch (e) { alert('Error adding item'); }
+    } catch (e) { showToast('Error adding item', 'error'); }
 };
 
 window.deleteNavItem = async function(id) {
@@ -629,7 +625,7 @@ window.deleteNavItem = async function(id) {
         });
         window.loadNavItemsAdmin();
         loadNavLinks();
-    } catch (e) { alert('Error deleting item'); }
+    } catch (e) { showToast('Error deleting item', 'error'); }
 };
 
 // Subject Management Functions (Fix for Manage Subject)
@@ -719,9 +715,9 @@ window.addSubject = async function(e) {
             e.target.reset();
             window.loadSubjectsAdmin();
         } else {
-            alert('Failed to add subject');
+            showToast('Failed to add subject', 'error');
         }
-    } catch (e) { alert('Error adding subject'); }
+    } catch (e) { showToast('Error adding subject', 'error'); }
 };
 
 window.deleteSubject = async function(id) {
@@ -733,7 +729,7 @@ window.deleteSubject = async function(id) {
             headers: { 'X-User-ID': user.userId }
         });
         window.loadSubjectsAdmin();
-    } catch (e) { alert('Error deleting subject'); }
+    } catch (e) { showToast('Error deleting subject', 'error'); }
 };
 
 // Function to switch Admin Panel sections (Fixes 'Manage' buttons)
@@ -852,7 +848,7 @@ window.startSelectedQuiz = function() {
     const examMode = document.getElementById('examMode');
     const timePerQuestion = document.getElementById('timePerQuestion');
     
-    console.log('🚀 Start Quiz Requested');
+    console.log('Start Quiz Requested');
 
     if (categorySelect && topicSelect && categorySelect.value && topicSelect.value) {
         let url = `quiz.html?topic=${encodeURIComponent(topicSelect.value)}&category=${encodeURIComponent(categorySelect.value)}`;
@@ -940,26 +936,20 @@ document.addEventListener('DOMContentLoaded', () => {
         makeDraggable(popup);
     }
     
-    // FIX: Search Bar Event Listener
-    // Ensures filtering works immediately when typing
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.addEventListener('input', filterCards);
     }
 
-    // FIX: Directly attach listener to the "Start Quiz" button on Home Page
-    // This fixes the issue where the generic listener might miss the button click
     const startQuizBtn = document.getElementById('startQuizBtn');
     if (startQuizBtn) {
         startQuizBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            e.stopPropagation(); // Stop other generic listeners from firing
+            e.stopPropagation();
             window.startSelectedQuiz();
         });
     }
 
-    // AUTO-FIX: Attach listeners to Admin Buttons based on text content
-    // This guarantees buttons work even if HTML onclick="" is missing or broken
     const adminActions = {
         'manage user': 'manage-user',
         'manage subject': 'manage-subject',
@@ -1135,8 +1125,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     if (hamburgerBtn) hamburgerBtn.addEventListener('click', toggleMobileMenu);
     
-    // Search input keyup
-    const searchInput = document.getElementById('searchInput');
     if (searchInput) searchInput.addEventListener('keyup', filterCards);
     
     // Contact popup toggle
@@ -1238,11 +1226,23 @@ window.showToast = function(message, type = 'info', duration = 4000) {
         warning: 'fa-exclamation-triangle'
     };
     
-    toast.innerHTML = `
-        <i class="fa-solid ${icons[type] || icons.info}"></i>
-        <span class="toast-message">${message}</span>
-        <button class="toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
-    `;
+    const iconEl = document.createElement('i');
+    iconEl.className = `fa-solid ${icons[type] || icons.info}`;
+    
+    const msgEl = document.createElement('span');
+    msgEl.className = 'toast-message';
+    msgEl.textContent = message;
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'toast-close';
+    closeBtn.addEventListener('click', function() { toast.remove(); });
+    const closeIcon = document.createElement('i');
+    closeIcon.className = 'fa-solid fa-xmark';
+    closeBtn.appendChild(closeIcon);
+    
+    toast.appendChild(iconEl);
+    toast.appendChild(msgEl);
+    toast.appendChild(closeBtn);
     
     container.appendChild(toast);
     
@@ -1324,11 +1324,11 @@ function showSessionWarning(timeLeft) {
         <div class="session-modal-content">
             <h3><i class="fa-solid fa-clock" style="color: var(--primary); margin-right: 10px;"></i> Session Expiring</h3>
             <p>Your session will expire in:</p>
-            <div class="countdown">${secondsLeft}</div>
+            <div class="countdown">${Number(secondsLeft)}</div>
             <p>Click "Stay Logged In" to continue, or "Logout" to end your session.</p>
             <div class="btn-group">
-                <button class="btn-primary" onclick="extendSession()"><i class="fa-solid fa-check"></i> Stay Logged In</button>
-                <button class="btn-secondary" onclick="logoutNow()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+                <button class="btn-primary" id="extendSessionBtn"><i class="fa-solid fa-check"></i> Stay Logged In</button>
+                <button class="btn-secondary" id="logoutNowBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
             </div>
         </div>
     `;
@@ -1336,18 +1336,18 @@ function showSessionWarning(timeLeft) {
     document.body.appendChild(modal);
     modal.classList.add('active');
     
-    window.extendSession = function() {
+    document.getElementById('extendSessionBtn').addEventListener('click', function() {
         clearInterval(countdown);
         localStorage.setItem('lastActivity', Date.now().toString());
         sessionStorage.removeItem('sessionWarningShown');
         modal.remove();
-    };
+    });
     
-    window.logoutNow = function() {
+    document.getElementById('logoutNowBtn').addEventListener('click', function() {
         clearInterval(countdown);
         modal.remove();
         logout();
-    };
+    });
 }
 
 // Update last activity on user interaction
@@ -1437,13 +1437,26 @@ window.showBadgeNotification = function(badge) {
     const toast = document.createElement('div');
     toast.className = 'toast success';
     toast.style.borderLeftColor = badge.color;
-    toast.innerHTML = `
-        <i class="fa-solid ${badge.icon}" style="color: ${badge.color}; font-size: 24px;"></i>
-        <div style="flex: 1;">
-            <strong style="color: var(--text);">Badge Earned: ${badge.name}</strong>
-            <p style="color: var(--text-muted); margin: 4px 0 0 0; font-size: 12px;">${badge.description}</p>
-        </div>
-    `;
+    
+    const iconEl = document.createElement('i');
+    iconEl.className = `fa-solid ${badge.icon}`;
+    iconEl.style.cssText = `color: ${badge.color}; font-size: 24px;`;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.style.flex = '1';
+    
+    const strongEl = document.createElement('strong');
+    strongEl.style.color = 'var(--text)';
+    strongEl.textContent = `Badge Earned: ${badge.name}`;
+    
+    const pEl = document.createElement('p');
+    pEl.style.cssText = 'color: var(--text-muted); margin: 4px 0 0 0; font-size: 12px;';
+    pEl.textContent = badge.description;
+    
+    contentDiv.appendChild(strongEl);
+    contentDiv.appendChild(pEl);
+    toast.appendChild(iconEl);
+    toast.appendChild(contentDiv);
     
     const container = document.querySelector('.toast-container') || createToastContainer();
     container.appendChild(toast);

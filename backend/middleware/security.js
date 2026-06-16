@@ -55,8 +55,9 @@ function helmetMiddleware(req, res, next) {
 }
 
 function sensitiveFileBlock(req, res, next) {
-    const forbiddenFiles = ['/server.js', '/database.json', '/.env', '/migrate.js', '/package.json', '/package-lock.json', '/TODO.md', '/.gitignore', '/.env.example'];
-    if (forbiddenFiles.includes(req.path)) {
+    const forbiddenPatterns = ['/server.js', '/database.json', '/.env', '/migrate.js', '/package.json', '/package-lock.json', '/TODO.md', '/.gitignore', '/.env.example'];
+    const forbiddenDirs = ['/backups', '/config', '/utils', '/__tests__', '/middleware'];
+    if (forbiddenPatterns.includes(req.path) || forbiddenDirs.some(d => req.path.startsWith(d + '/') || req.path === d)) {
         console.warn(`[SECURITY] Blocked access to sensitive file: ${req.path} from ${req.ip}`);
         return res.status(403).json({ message: 'Forbidden' });
     }

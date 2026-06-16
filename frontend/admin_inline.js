@@ -210,15 +210,15 @@
 
             mcqList.innerHTML = mcqs.map(mcq => `
                 <li class="mcq-item" style="position: relative;">
-                    <input type="checkbox" class="mcq-checkbox" value="${mcq._id}" style="position: absolute; top: 15px; left: 15px; width: 18px; height: 18px; cursor: pointer;">
+                    <input type="checkbox" class="mcq-checkbox" value="${escapeHtml(mcq._id)}" style="position: absolute; top: 15px; left: 15px; width: 18px; height: 18px; cursor: pointer;">
                     <h4 style="margin-left: 30px;">${escapeHtml(mcq.question)}</h4>
                     <p><strong>Category:</strong> ${escapeHtml(mcq.category)}</p>
                     <p><strong>Topic:</strong> ${escapeHtml(mcq.topic)}</p>
                     <p><strong>Difficulty:</strong> <span style="color: ${mcq.difficulty === 'easy' ? '#21cc12' : mcq.difficulty === 'medium' ? '#ff9800' : '#ff6b6b'}">${escapeHtml(mcq.difficulty)}</span></p>
                     <p><strong>Options:</strong> ${mcq.options.length}</p>
                     <div class="mcq-item-actions">
-                        <button type="button" class="edit-btn" data-onclick="editMCQ" data-args="['${mcq._id}']" title="Edit"><i class="fa-solid fa-edit"></i> Edit</button>
-                        <button type="button" class="delete-btn" data-onclick="confirmDeleteMCQ" data-args="['${mcq._id}']" title="Delete"><i class="fa-solid fa-trash"></i> Delete</button>
+                        <button type="button" class="edit-btn" data-onclick="editMCQ" data-args="['${escapeHtml(mcq._id)}']" title="Edit"><i class="fa-solid fa-edit"></i> Edit</button>
+                        <button type="button" class="delete-btn" data-onclick="confirmDeleteMCQ" data-args="['${escapeHtml(mcq._id)}']" title="Delete"><i class="fa-solid fa-trash"></i> Delete</button>
                     </div>
                 </li>
             `).join('');
@@ -804,11 +804,17 @@
                             if (!response.ok) throw new Error('API Error');
                             
                             successCount++;
-                            log.innerHTML += `<div style="color: green;">✓ Row ${i+1}: Added "${row.Question.substring(0, 30)}..."</div>`;
+                            const logDiv = document.createElement('div');
+                            logDiv.style.color = 'green';
+                            logDiv.textContent = `✓ Row ${i+1}: Added "${(row.Question || '').substring(0, 30)}..."`;
+                            log.appendChild(logDiv);
 
                         } catch (err) {
                             failCount++;
-                            log.innerHTML += `<div style="color: red;">✗ Row ${i+1}: ${err.message}</div>`;
+                            const logDiv = document.createElement('div');
+                            logDiv.style.color = 'red';
+                            logDiv.textContent = `✗ Row ${i+1}: ${err.message}`;
+                            log.appendChild(logDiv);
                         }
 
                         // Update Progress
@@ -817,7 +823,11 @@
                         document.getElementById('processedCount').textContent = i + 1;
                     }
 
-                    log.innerHTML += `<div style="font-weight: bold; margin-top: 10px;">Completed: ${successCount} successful, ${failCount} failed.</div>`;
+                    const summaryDiv = document.createElement('div');
+                    summaryDiv.style.fontWeight = 'bold';
+                    summaryDiv.style.marginTop = '10px';
+                    summaryDiv.textContent = `Completed: ${successCount} successful, ${failCount} failed.`;
+                    log.appendChild(summaryDiv);
                     
                     // Refresh lists
                     loadCategories();
@@ -1066,20 +1076,25 @@
                     return;
                 }
 
-                container.innerHTML = items.map(item => `
+                container.innerHTML = items.map(item => {
+                    const safeId = escapeHtml(item._id);
+                    const safeName = escapeHtml(item.name);
+                    const safeIcon = escapeHtml(item.icon);
+                    const safePath = escapeHtml(item.path);
+                    return `
                     <div class="subject-item">
                         <div class="subject-header">
                             <div>
-                                <strong style="font-size: 1.1em;"><i class="${item.icon}"></i> ${item.name}</strong>
-                                <div style="font-size: 0.9em; color: #666;">Path: ${item.path}</div>
+                                <strong style="font-size: 1.1em;"><i class="${safeIcon}"></i> ${safeName}</strong>
+                                <div style="font-size: 0.9em; color: #666;">Path: ${safePath}</div>
                             </div>
                             <div>
-                                <button data-onclick="editNavItem" data-args="['${item._id}', '${item.name}', '${item.icon}', '${item.path}', 0]" class="edit-btn" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">Edit</button>
-                                <button data-onclick="deleteNavItem" data-args="['${item._id}']" class="delete-btn" style="padding: 5px 10px; font-size: 12px;">Delete</button>
+                                <button data-onclick="editNavItem" data-args="['${safeId}', '${safeName.replace(/'/g, "\\'")}', '${safeIcon.replace(/'/g, "\\'")}', '${safePath.replace(/'/g, "\\'")}', 0]" class="edit-btn" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">Edit</button>
+                                <button data-onclick="deleteNavItem" data-args="['${safeId}']" class="delete-btn" style="padding: 5px 10px; font-size: 12px;">Delete</button>
                             </div>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             } catch (error) {
                 console.error('Error loading nav items:', error);
                 container.innerHTML = '<p style="text-align: center; color: red;">Could not load navigation links.</p>';
@@ -1217,25 +1232,30 @@
                     return;
                 }
 
-                container.innerHTML = messages.map(msg => `
+                container.innerHTML = messages.map(msg => {
+                    const safeId = escapeHtml(msg._id);
+                    const safeName = escapeHtml(msg.name);
+                    const safeEmail = escapeHtml(msg.email);
+                    const safeMessage = escapeHtml(msg.message);
+                    return `
                     <div style="background:${msg.read ? 'var(--bg-primary)' : 'var(--bg-card)'}; border:1px solid ${msg.read ? 'var(--border)' : 'var(--primary)'}; border-left: 4px solid ${msg.read ? 'transparent' : 'var(--primary)'}; padding:15px; margin-bottom:10px; border-radius:5px; display: flex; gap: 15px;">
                         <div style="display: flex; align-items: flex-start; padding-top: 5px;">
-                            <input type="checkbox" class="message-checkbox" name="messageIds" value="${msg._id}" style="width: 18px; height: 18px; cursor: pointer;">
+                            <input type="checkbox" class="message-checkbox" name="messageIds" value="${safeId}" style="width: 18px; height: 18px; cursor: pointer;">
                         </div>
                         <div style="flex: 1;">
                             <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                                <strong>${escapeHtml(msg.name)} <span style="color:#666; font-weight:normal;">(${escapeHtml(msg.email)})</span></strong>
+                                <strong>${safeName} <span style="color:#666; font-weight:normal;">(${safeEmail})</span></strong>
                                 <small style="color:#999;">${new Date(msg.date).toLocaleString()}</small>
                             </div>
-                            <p style="margin:10px 0; color:#333;">${escapeHtml(msg.message)}</p>
+                            <p style="margin:10px 0; color:#333;">${safeMessage}</p>
                             <div style="display:flex; gap:10px;">
-                                ${!msg.read ? `<button data-onclick="markAsRead" data-args="['${msg._id}']" class="btn-secondary" style="padding:5px 10px; font-size:12px; background:#fff; border:1px solid #ccc;">Mark as Read</button>` : ''}
-                                <a href="mailto:${escapeHtml(msg.email)}?subject=Re: Inquiry via mcqlala&body=Hi ${encodeURIComponent(msg.name)},%0D%0A%0D%0ARegarding your message:%0D%0A%22${encodeURIComponent(msg.message)}%22%0D%0A%0D%0A" class="btn-secondary" style="padding:5px 10px; font-size:12px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; background:#667eea; color:white; border:none;"><i class="fa-solid fa-reply" style="margin-right:5px;"></i> Reply</a>
-                                <button data-onclick="deleteMessage" data-args="['${msg._id}']" class="delete-btn" style="padding:5px 10px; font-size:12px;">Delete</button>
+                                ${!msg.read ? `<button data-onclick="markAsRead" data-args="['${safeId}']" class="btn-secondary" style="padding:5px 10px; font-size:12px; background:#fff; border:1px solid #ccc;">Mark as Read</button>` : ''}
+                                <a href="mailto:${safeEmail}?subject=Re: Inquiry via mcqlala&body=Hi ${encodeURIComponent(msg.name)},%0D%0A%0D%0ARegarding your message:%0D%0A%22${encodeURIComponent(msg.message)}%22%0D%0A%0D%0A" class="btn-secondary" style="padding:5px 10px; font-size:12px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; background:#667eea; color:white; border:none;"><i class="fa-solid fa-reply" style="margin-right:5px;"></i> Reply</a>
+                                <button data-onclick="deleteMessage" data-args="['${safeId}']" class="delete-btn" style="padding:5px 10px; font-size:12px;">Delete</button>
                             </div>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             } catch (e) { container.innerHTML = '<p style="color:red">Error loading messages</p>'; }
         }
 
@@ -1338,18 +1358,22 @@
                     container.innerHTML = '<p style="color: #999;">No PDFs uploaded yet</p>';
                     return;
                 }
-                container.innerHTML = pdfs.map(pdf => `
+                container.innerHTML = pdfs.map(pdf => {
+                    const safeUrl = escapeHtml(pdf.url);
+                    const safeName = escapeHtml(pdf.name);
+                    const safeId = escapeHtml(pdf._id);
+                    return `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; background: #fff;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-file-pdf" style="color: #e74c3c; font-size: 24px;"></i>
                             <div>
-                                <a href="${pdf.url}" target="_blank" style="color: #333; font-weight: 500; text-decoration: none;">${pdf.name}</a>
+                                <a href="${safeUrl}" target="_blank" style="color: #333; font-weight: 500; text-decoration: none;">${safeName}</a>
                                 <p style="color: #666; font-size: 12px; margin: 0;">${new Date(pdf.uploadedAt).toLocaleString()}</p>
                             </div>
                         </div>
-                        <button data-onclick="deletePdf" data-args="['${pdf._id}']" class="delete-btn" style="padding: 6px 12px;"><i class="fa-solid fa-trash"></i></button>
+                        <button data-onclick="deletePdf" data-args="['${safeId}']" class="delete-btn" style="padding: 6px 12px;"><i class="fa-solid fa-trash"></i></button>
                     </div>
-                `).join('');
+                `}).join('');
             } catch (e) {
                 document.getElementById('pdfsList').innerHTML = '<p style="color: red;">Failed to load PDFs</p>';
             }

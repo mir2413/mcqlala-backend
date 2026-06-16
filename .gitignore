@@ -1,5 +1,6 @@
 node_modules/
 .env
+backend/.env
 .DS_Store
 backend/database.json
 backend/verification_*
@@ -10,3 +11,7 @@ backend/verification_mcqs.json
 backend/verification_output.log
 backend/verification_error.log
 backend/pdfs/
+backups/
+coverage/
+*.log
+backend/test-results.txt

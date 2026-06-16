@@ -58,7 +58,7 @@ router.get('/stats', async (req, res) => {
         ]);
         res.json(stats);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Failed to fetch stats.' });
     }
 });
 
@@ -93,7 +93,7 @@ router.get('/:id', async (req, res) => {
         }
         res.json(mcq);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Failed to fetch MCQ.' });
     }
 });
 
@@ -102,13 +102,22 @@ router.put('/:id', adminAuth, async (req, res) => {
         return res.status(503).json({ message: 'Database not connected' });
     }
     try {
-        const mcq = await MCQ.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const { category, topic, question, options, correctAnswer, explanation, difficulty } = req.body;
+        const allowedFields = {};
+        if (category !== undefined) allowedFields.category = String(category).substring(0, 200);
+        if (topic !== undefined) allowedFields.topic = String(topic).substring(0, 200);
+        if (question !== undefined) allowedFields.question = String(question).substring(0, 2000);
+        if (options !== undefined && Array.isArray(options)) allowedFields.options = options.map(o => String(o).substring(0, 500)).slice(0, 6);
+        if (correctAnswer !== undefined) allowedFields.correctAnswer = Number(correctAnswer);
+        if (explanation !== undefined) allowedFields.explanation = String(explanation).substring(0, 2000);
+        if (difficulty !== undefined) allowedFields.difficulty = ['easy', 'medium', 'hard'].includes(difficulty) ? difficulty : 'medium';
+        const mcq = await MCQ.findByIdAndUpdate(req.params.id, allowedFields, { new: true });
         if (!mcq) {
             return res.status(404).json({ message: 'MCQ not found' });
         }
         res.json(mcq);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Failed to update MCQ.' });
     }
 });
 
@@ -117,10 +126,22 @@ router.post('/', adminAuth, async (req, res) => {
         return res.status(503).json({ message: 'Database not connected' });
     }
     try {
-        const newMcq = await MCQ.create(req.body);
+        const { category, topic, question, options, correctAnswer, explanation, difficulty } = req.body;
+        if (!category || !topic || !question || !options || correctAnswer === undefined) {
+            return res.status(400).json({ message: 'Missing required MCQ fields.' });
+        }
+        const newMcq = await MCQ.create({
+            category: String(category).substring(0, 200),
+            topic: String(topic).substring(0, 200),
+            question: String(question).substring(0, 2000),
+            options: Array.isArray(options) ? options.map(o => String(o).substring(0, 500)).slice(0, 6) : [],
+            correctAnswer: Number(correctAnswer),
+            explanation: String(explanation || '').substring(0, 2000),
+            difficulty: ['easy', 'medium', 'hard'].includes(difficulty) ? difficulty : 'medium'
+        });
         res.json(newMcq);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Failed to create MCQ.' });
     }
 });
 
@@ -135,7 +156,7 @@ router.delete('/:id', adminAuth, async (req, res) => {
         }
         res.json({ message: 'Deleted successfully' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Failed to delete MCQ.' });
     }
 });
 
@@ -145,13 +166,13 @@ router.post('/bulk-delete', adminAuth, async (req, res) => {
     }
     try {
         const { ids } = req.body;
-        if (!Array.isArray(ids) || ids.length === 0) {
+        if (!Array.isArray(ids) || ids.length === 0 || ids.length > 500) {
             return res.status(400).json({ message: 'Invalid request' });
         }
         const result = await MCQ.deleteMany({ _id: { $in: ids } });
         res.json({ message: `${result.deletedCount} questions deleted`, deletedCount: result.deletedCount });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Failed to delete MCQs.' });
     }
 });
 

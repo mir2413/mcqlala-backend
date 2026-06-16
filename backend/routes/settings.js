@@ -25,21 +25,25 @@ router.post('/', adminAuth, async (req, res) => {
         return res.status(503).json({ message: 'Database not connected' });
     }
     try {
+        const { title, footer } = req.body;
         let settings = await Setting.findOne();
         if (!settings) {
-            settings = await Setting.create(req.body);
+            settings = await Setting.create({
+                title: String(title || 'MCQLala').substring(0, 200),
+                footer: String(footer || '').substring(0, 500)
+            });
         } else {
-            if (req.body.title) {
-                settings.title = req.body.title;
+            if (title) {
+                settings.title = String(title).substring(0, 200);
             }
-            if (req.body.footer) {
-                settings.footer = req.body.footer;
+            if (footer) {
+                settings.footer = String(footer).substring(0, 500);
             }
             await settings.save();
         }
         res.json(settings);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Failed to update settings.' });
     }
 });
 

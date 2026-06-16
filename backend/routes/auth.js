@@ -48,12 +48,15 @@ router.post('/users/login', loginLimiter, async (req, res) => {
     if (email.length > 254 || password.length > 128) {
         return res.status(400).json({ message: 'Invalid input: email or password too long.' });
     }
+    if (/[${}]/.test(email)) {
+        return res.status(400).json({ message: 'Invalid input: email contains invalid characters.' });
+    }
     if (!getDbStatus()) {
         return res.status(503).json({ message: 'Database not connected' });
     }
 
     try {
-        const user = await User.findOne({ $or: [{ email }, { username: email }] });
+        const user = await User.findOne({ $or: [{ email }, { username: email }] }).select('-password');
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials.' });
         }
@@ -79,7 +82,7 @@ router.post('/users/login', loginLimiter, async (req, res) => {
             isAdmin: user.isAdmin
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Login failed.' });
     }
 });
 
@@ -108,16 +111,13 @@ router.post('/users/register', loginLimiter, async (req, res) => {
     try {
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
-            if (existingUser.email === email) {
-                return res.status(400).json({ message: 'Email already in use.' });
-            }
-            return res.status(400).json({ message: 'Username already in use.' });
+            return res.status(400).json({ message: 'An account with that email or username already exists.' });
         }
-        const hashedPassword = await bcryptjs.hash(password, 10);
+        const hashedPassword = await bcryptjs.hash(password, 12);
         await User.create({ username, email, password: hashedPassword, isAdmin: false });
         res.status(201).json({ message: 'User registered successfully.' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ message: 'Registration failed.' });
     }
 });
 
@@ -170,7 +170,7 @@ router.post('/users/change-password', adminAuth, async (req, res) => {
         return res.status(400).json({ message: 'Password must be at least 8 characters.' });
     }
     try {
-        const hashedPassword = await bcryptjs.hash(newPassword, 10);
+        const hashedPassword = await bcryptjs.hash(newPassword, 12);
         const user = await User.findByIdAndUpdate(userId, { password: hashedPassword });
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
@@ -181,13 +181,16 @@ router.post('/users/change-password', adminAuth, async (req, res) => {
     }
 });
 
-router.post('/users/forgot-password', async (req, res) => {
+router.post('/users/forgot-password', loginLimiter, async (req, res) => {
     if (!getDbStatus()) {
         return res.status(503).json({ message: 'Database not connected' });
     }
     const { email } = req.body;
+    if (!email || typeof email !== 'string') {
+        return res.status(400).json({ message: 'Valid email required' });
+    }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
+    if (!emailRegex.test(email)) {
         return res.status(400).json({ message: 'Valid email required' });
     }
 
@@ -221,7 +224,7 @@ router.post('/users/forgot-password', async (req, res) => {
     }
 });
 
-router.post('/users/reset-password', async (req, res) => {
+router.post('/users/reset-password', loginLimiter, async (req, res) => {
     if (!getDbStatus()) {
         return res.status(503).json({ message: 'Database not connected' });
     }
@@ -236,14 +239,14 @@ router.post('/users/reset-password', async (req, res) => {
             return res.status(400).json({ message: 'Invalid or expired token' });
         }
 
-        const hashedPassword = await bcryptjs.hash(password, 10);
+        const hashedPassword = await bcryptjs.hash(password, 12);
         user.password = hashedPassword;
         user.resetToken = undefined;
         user.resetTokenExpiry = undefined;
         await user.save();
         res.json({ message: 'Password reset successful! You can now login.' });
     } catch (err) {
-        res.status(500).json({ message: 'Error resetting password' });
+        res.status(500).json({ message: 'Operation failed.' });
     }
 });
 

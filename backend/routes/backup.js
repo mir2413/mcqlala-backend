@@ -35,20 +35,28 @@ router.post('/restore/:filename', adminAuth, async (req, res) => {
         return res.status(503).json({ message: 'Database not connected' });
     }
     try {
-        const result = await backupManager.restoreDatabase(req.params.filename);
+        const safeFilename = path.basename(req.params.filename);
+        if (!safeFilename.match(/^backup-.*\.json$/)) {
+            return res.status(400).json({ message: 'Invalid backup filename.' });
+        }
+        const result = await backupManager.restoreDatabase(safeFilename);
         if (result.success) {
-            console.log(`[BACKUP] Admin ${req.user.username} restored from: ${req.params.filename}`);
-            res.json({ message: 'Database restored successfully', filename: req.params.filename });
+            console.log(`[BACKUP] Admin ${req.user.username} restored from: ${safeFilename}`);
+            res.json({ message: 'Database restored successfully', filename: safeFilename });
         } else {
             res.status(500).json({ message: 'Restore failed', error: result.error });
         }
     } catch (err) {
-        res.status(500).json({ message: 'Restore failed', error: err.message });
+        res.status(500).json({ message: 'Restore failed.' });
     }
 });
 
 router.get('/download/:filename', adminAuth, (req, res) => {
-    const filepath = path.join(__dirname, '..', '..', 'backups', path.basename(req.params.filename));
+    const safeFilename = path.basename(req.params.filename);
+    if (!safeFilename.match(/^backup-.*\.json$/)) {
+        return res.status(400).json({ message: 'Invalid backup filename.' });
+    }
+    const filepath = path.join(__dirname, '..', '..', 'backups', safeFilename);
     if (fs.existsSync(filepath)) {
         res.download(filepath);
     } else {

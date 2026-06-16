@@ -17,7 +17,7 @@ if (!JWT_SECRET) {
 
 const { connectDB, getDbStatus } = require('./config/database');
 const { allowedOrigins } = require('./config/constants');
-const { securityHeaders, apiCacheControl, sensitiveFileBlock, securityLogger, errorHandler } = require('./middleware/security');
+const { securityHeaders, apiCacheControl, sensitiveFileBlock, securityLogger, errorHandler, nonceGenerator, helmetMiddleware } = require('./middleware/security');
 const { csrfSecretMiddleware, csrfProtection, sanitizeInput } = require('./middleware/auth');
 const { limiter, loginLimiter } = require('./middleware/rateLimiter');
 
@@ -27,6 +27,8 @@ const PORT = process.env.PORT || 3004;
 connectDB();
 
 app.use(securityHeaders);
+app.use(nonceGenerator);
+app.use(helmetMiddleware);
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -34,6 +36,7 @@ app.use(cookieParser());
 app.use(csrfSecretMiddleware);
 app.use(csrfProtection);
 app.use(sanitizeInput);
+app.use(apiCacheControl);
 
 const cors = require('cors');
 app.use(cors({
@@ -51,7 +54,7 @@ app.use(cors({
 }));
 
 app.use((req, res, next) => {
-    const protectedRoutes = ['/api/mcqs', '/api/subjects', '/api/users', '/api/contact', '/api/pdfs', '/api/navitems', '/api/settings'];
+    const protectedRoutes = ['/api/mcqs', '/api/subjects', '/api/users', '/api/contact', '/api/pdfs', '/api/navitems', '/api/settings', '/api/scores', '/api/badges'];
     const isProtected = protectedRoutes.some(r => req.path.startsWith(r)) && req.method !== 'GET';
     if (isProtected) {
         limiter(req, res, next);
@@ -108,7 +111,7 @@ app.get('/api/stats', async (req, res) => {
         ]);
         res.json({ totalMCQs, totalSubjects, totalUsers, totalScores });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to fetch stats' });
+        res.status(500).json({ message: 'Failed to fetch stats.' });
     }
 });
 
@@ -122,7 +125,7 @@ app.get('/api/leaderboard/:topic', async (req, res) => {
             .select('username percentage score totalQuestions createdAt');
         res.json(leaderboard);
     } catch (err) {
-        res.status(500).json({ error: 'Failed to fetch leaderboard' });
+        res.status(500).json({ message: 'Failed to fetch leaderboard.' });
     }
 });
 
@@ -133,7 +136,7 @@ app.get('/api/badges', async (req, res) => {
         const badges = await Badge.find().sort({ order: 1 });
         res.json(badges);
     } catch (err) {
-        res.status(500).json({ error: 'Failed to fetch badges' });
+        res.status(500).json({ message: 'Failed to fetch badges.' });
     }
 });
 
@@ -169,7 +172,7 @@ app.get('/api/mcqs-category/all', async (req, res) => {
         ]);
         res.json(structure);
     } catch (err) {
-        res.status(500).json({ error: 'Failed to fetch MCQ structure' });
+        res.status(500).json({ message: 'Failed to fetch MCQ structure.' });
     }
 });
 
@@ -185,6 +188,7 @@ app.use(errorHandler);
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
 });
 
 process.on('uncaughtException', (err) => {

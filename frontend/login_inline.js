@@ -40,11 +40,11 @@
                         localStorage.setItem('isAdmin', data.isAdmin);
                         window.location.href = 'index.html';
                     } else {
-                        alert(data.message || 'Login failed');
+                        if (typeof showToast === 'function') { showToast(data.message || 'Login failed', 'error'); } else { alert(data.message || 'Login failed'); }
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Network error. Please check your connection.');
+                    if (typeof showToast === 'function') { showToast('Network error. Please check your connection.', 'error'); } else { alert('Network error. Please check your connection.'); }
                 } finally {
                     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Login'; }
                 }
