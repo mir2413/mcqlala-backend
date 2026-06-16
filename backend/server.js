@@ -56,7 +56,8 @@ app.use(cors({
 app.use((req, res, next) => {
     const protectedRoutes = ['/api/mcqs', '/api/subjects', '/api/users', '/api/contact', '/api/pdfs', '/api/navitems', '/api/settings', '/api/scores', '/api/badges'];
     const isProtected = protectedRoutes.some(r => req.path.startsWith(r)) && req.method !== 'GET';
-    if (isProtected) {
+    const isLoginRegister = req.path.includes('/users/login') || req.path.includes('/users/register');
+    if (isProtected && !isLoginRegister) {
         limiter(req, res, next);
     } else {
         next();
