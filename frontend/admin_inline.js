@@ -111,6 +111,11 @@
             if (tabName === 'manage-pdfs') {
                 loadPdfs();
             }
+
+            // Refresh verify categories when switching to verify tab
+            if (tabName === 'mcq-verify') {
+                loadVerifyCategories();
+            }
         }
 
         async function loadStats() {
@@ -1453,15 +1458,52 @@
 
     let verifyPollInterval = null;
 
+    function loadVerifyCategories() {
+        const select = document.getElementById('verifyCategory');
+        if (!select) return;
+        const current = select.value;
+        select.innerHTML = '<option value="">All Categories</option>';
+        const categories = Object.keys(siteStructure).sort();
+        categories.forEach(cat => {
+            select.add(new Option(cat, cat));
+        });
+        if (current) select.value = current;
+    }
+
+    window.loadVerifyTopics = function loadVerifyTopics() {
+        const category = document.getElementById('verifyCategory').value;
+        const topicSelect = document.getElementById('verifyTopic');
+        if (!topicSelect) return;
+        const current = topicSelect.value;
+        topicSelect.innerHTML = '<option value="">All Topics</option>';
+        if (!category || !siteStructure[category]) return;
+        const topics = siteStructure[category].sort();
+        topics.forEach(topic => {
+            topicSelect.add(new Option(topic, topic));
+        });
+        if (current && topics.includes(current)) topicSelect.value = current;
+    }
+
     window.loadMCQVerifyStatus = async function loadMCQVerifyStatus() {
+        loadVerifyCategories();
+
         try {
             const res = await fetch(`${API_BASE_URL}/verify-mcqs/checkpoint`);
             const data = await res.json();
-            if (data.exists && data.processedCount > 0 && data.totalMcqs > 0) {
-                const done = data.processedCount >= data.totalMcqs;
-                if (!done) {
-                    document.getElementById('startVerifyBtn').textContent = 'Resume Verification';
-                    document.getElementById('startVerifyBtn').innerHTML = '<i class="fa-solid fa-play"></i> Resume Verification';
+            if (data.exists) {
+                if (data.category) {
+                    const catSelect = document.getElementById('verifyCategory');
+                    if (catSelect) { catSelect.value = data.category; loadVerifyTopics(); }
+                }
+                if (data.topic) {
+                    const topicSelect = document.getElementById('verifyTopic');
+                    if (topicSelect) topicSelect.value = data.topic;
+                }
+                if (data.processedCount > 0 && data.totalMcqs > 0) {
+                    const done = data.processedCount >= data.totalMcqs;
+                    if (!done) {
+                        document.getElementById('startVerifyBtn').innerHTML = '<i class="fa-solid fa-play"></i> Resume Verification';
+                    }
                 }
             }
         } catch (_e) { /* no checkpoint */ }
@@ -1473,6 +1515,8 @@
                 document.getElementById('verifyStatus').style.display = 'block';
                 document.getElementById('startVerifyBtn').disabled = true;
                 document.getElementById('startVerifyBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Running...';
+                document.getElementById('verifyCategory').disabled = true;
+                document.getElementById('verifyTopic').disabled = true;
                 updateVerifyUI(data);
                 startVerifyPolling();
             } else if (data.processed > 0) {
@@ -1486,11 +1530,19 @@
 
     window.startMCQVerification = async function startMCQVerification() {
         const btn = document.getElementById('startVerifyBtn');
+        const category = document.getElementById('verifyCategory').value;
+        const topic = document.getElementById('verifyTopic').value;
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Starting...';
+        document.getElementById('verifyCategory').disabled = true;
+        document.getElementById('verifyTopic').disabled = true;
 
         try {
-            const res = await fetch(`${API_BASE_URL}/verify-mcqs/start`);
+            const res = await fetch(`${API_BASE_URL}/verify-mcqs/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category: category || null, topic: topic || null })
+            });
             const data = await res.json();
             if (res.ok) {
                 document.getElementById('verifyStatus').style.display = 'block';
@@ -1501,11 +1553,15 @@
                 showError(data.error || 'Failed to start');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-play"></i> Start Verification';
+                document.getElementById('verifyCategory').disabled = false;
+                document.getElementById('verifyTopic').disabled = false;
             }
         } catch (e) {
             showError('Error: ' + e.message);
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-play"></i> Start Verification';
+            document.getElementById('verifyCategory').disabled = false;
+            document.getElementById('verifyTopic').disabled = false;
         }
     };
 
@@ -1525,6 +1581,8 @@
                 verifyPollInterval = null;
                 document.getElementById('startVerifyBtn').disabled = false;
                 document.getElementById('startVerifyBtn').innerHTML = '<i class="fa-solid fa-play"></i> Start Verification';
+                document.getElementById('verifyCategory').disabled = false;
+                document.getElementById('verifyTopic').disabled = false;
                 document.getElementById('viewReportBtn').style.display = 'inline-flex';
                 document.getElementById('downloadReportBtn').style.display = 'inline-flex';
                 loadMCQVerifyReport();
@@ -1543,7 +1601,11 @@
         document.getElementById('verifyMismatched').textContent = data.mismatched || 0;
         document.getElementById('verifyErrors').textContent = data.errors || 0;
         document.getElementById('verifyElapsed').textContent = data.elapsed || '';
-        document.getElementById('verifyStatusText').textContent = data.running ? 'Status: Running' : 'Status: Complete';
+        const filterLabel = data.filterLabel || 'All MCQs';
+        const statusPrefix = data.running ? 'Verifying' : 'Verified';
+        document.getElementById('verifyStatusText').textContent = data.running
+            ? `${statusPrefix}: ${filterLabel}`
+            : `Complete — ${filterLabel}`;
     }
 
     window.loadMCQVerifyReport = async function loadMCQVerifyReport() {

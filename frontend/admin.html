@@ -347,8 +347,17 @@
         <div id="mcq-verify" class="tab-content">
             <h3><i class="fa-solid fa-shield-check"></i> MCQ Answer Verification</h3>
             <p style="color: var(--text-muted); margin-bottom: 20px;">
-                Use AI to verify that your stored MCQ answers are correct. The system checks each question's answer against Llama 3.3-70B (Groq) and generates a report of mismatches.
+                Use AI to verify that your stored MCQ answers are correct. Select a category and topic to verify specific MCQs, or leave blank to verify all.
             </p>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
+                <select id="verifyCategory" onchange="loadVerifyTopics()" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; outline: none; min-width: 180px;">
+                    <option value="">All Categories</option>
+                </select>
+                <select id="verifyTopic" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; outline: none; min-width: 180px;">
+                    <option value="">All Topics</option>
+                </select>
+            </div>
 
             <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
                 <button id="startVerifyBtn" class="btn-primary" data-onclick="startMCQVerification" style="padding: 10px 20px;">

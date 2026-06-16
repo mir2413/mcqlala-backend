@@ -8,7 +8,7 @@ const { VERIFICATION_CHECKPOINT, VERIFICATION_REPORT, VERIFICATION_SUMMARY, BATC
 const Groq = require('groq-sdk');
 
 let verificationRunning = false;
-const verificationState = { total: 0, processed: 0, matched: 0, mismatched: 0, errors: 0, startTime: null, dailyUsed: 0 };
+const verificationState = { total: 0, processed: 0, matched: 0, mismatched: 0, errors: 0, startTime: null, dailyUsed: 0, category: null, topic: null };
 
 function getTodayKey() {
     return new Date().toISOString().split('T')[0];
@@ -82,24 +82,42 @@ function buildMessages(batch) {
     ];
 }
 
-async function runVerification() {
+function buildFilter(category, topic) {
+    const filter = {};
+    if (category) filter.category = category;
+    if (topic) filter.topic = topic;
+    return filter;
+}
+
+function getFilterLabel(category, topic) {
+    if (category && topic) return `${category} > ${topic}`;
+    if (category) return `${category} (all topics)`;
+    return 'All MCQs';
+}
+
+async function runVerification(category, topic) {
     if (verificationRunning) {
         console.log('[Verify] Already running'); return;
     }
     verificationRunning = true;
     verificationState.startTime = new Date();
+    verificationState.category = category || null;
+    verificationState.topic = topic || null;
 
     try {
-        const allMcqs = await MCQ.find({}).lean();
+        const filter = buildFilter(category, topic);
+        const allMcqs = await MCQ.find(filter).lean();
         verificationState.total = allMcqs.length;
-        console.log(`[Verify] Loaded ${allMcqs.length} MCQs`);
+        console.log(`[Verify] Loaded ${allMcqs.length} MCQs (${getFilterLabel(category, topic)})`);
 
         const checkpoint = loadCheckpoint();
         const results = { matched: 0, mismatched: 0, errors: 0, mismatches: [], errorsList: [] };
         let processedCount = 0;
         let startBatch = 0;
 
-        if (checkpoint && checkpoint.processedCount > 0) {
+        if (checkpoint && checkpoint.processedCount > 0
+            && (checkpoint.category || null) === (category || null)
+            && (checkpoint.topic || null) === (topic || null)) {
             const checkpointDate = checkpoint.date || '';
             const today = getTodayKey();
             if (checkpointDate === today) {
@@ -135,7 +153,8 @@ async function runVerification() {
                 console.log('[Verify] GROQ_API_KEY not set');
                 saveCheckpoint({
                     processedCount, currentKeyOffset: verificationState.dailyUsed,
-                    results, totalMcqs: allMcqs.length, date: getTodayKey()
+                    results, totalMcqs: allMcqs.length, date: getTodayKey(),
+                    category: category || null, topic: topic || null
                 });
                 break;
             }
@@ -190,7 +209,8 @@ async function runVerification() {
                         console.error(`[Verify] API key restricted/unavailable. Stopping verification.`);
                         saveCheckpoint({
                             processedCount, currentKeyOffset: verificationState.dailyUsed,
-                            results, totalMcqs: allMcqs.length, date: getTodayKey()
+                            results, totalMcqs: allMcqs.length, date: getTodayKey(),
+                            category: category || null, topic: topic || null
                         });
                         verificationRunning = false;
                         return;
@@ -211,7 +231,8 @@ async function runVerification() {
             if (saveCounter % 50 === 0 || b === totalBatches - 1) {
                 saveCheckpoint({
                     processedCount, currentKeyOffset: verificationState.dailyUsed,
-                    results, totalMcqs: allMcqs.length, date: getTodayKey()
+                    results, totalMcqs: allMcqs.length, date: getTodayKey(),
+                    category: category || null, topic: topic || null
                 });
                 verificationState.processed = processedCount;
             }
@@ -219,9 +240,11 @@ async function runVerification() {
             await new Promise(r => setTimeout(r, 3000)); // eslint-disable-line no-promise-executor-return
         }
 
+        const filterLabel = getFilterLabel(category, topic);
         const report = {
             generatedAt: new Date().toISOString(),
             model: 'llama-3.3-70b-versatile (Groq)',
+            filter: { category: category || null, topic: topic || null, label: filterLabel },
             summary: {
                 totalChecked: allMcqs.length, matched: results.matched,
                 mismatched: results.mismatched, errors: results.errors,
@@ -234,6 +257,7 @@ async function runVerification() {
             `MCQ Verification Report\n` +
             `Generated: ${report.generatedAt}\n` +
             `Model: ${report.model}\n` +
+            `Filter: ${filterLabel}\n` +
             `Total: ${allMcqs.length}\n` +
             `Matched: ${results.matched}\n` +
             `Mismatched: ${results.mismatched}\n` +
@@ -248,7 +272,7 @@ async function runVerification() {
     }
 }
 
-router.get('/start', adminAuth, (req, res) => {
+router.post('/start', adminAuth, (req, res) => {
     if (!getDbStatus()) {
         return res.status(503).json({ error: 'Database not connected' });
     }
@@ -258,12 +282,18 @@ router.get('/start', adminAuth, (req, res) => {
     if (!process.env.GROQ_API_KEY) {
         return res.status(400).json({ error: 'GROQ_API_KEY not set in environment' });
     }
+    const { category, topic } = req.body || {};
     const checkpoint = loadCheckpoint();
-    const resumeInfo = checkpoint && checkpoint.processedCount > 0
-        ? ` (resuming from MCQ ${checkpoint.processedCount})`
-        : '';
-    setImmediate(() => runVerification());
-    res.json({ status: 'started', message: `Verification started${resumeInfo}`, model: 'llama-3.3-70b-versatile' });
+    const isResume = checkpoint && checkpoint.processedCount > 0
+        && (checkpoint.category || null) === (category || null)
+        && (checkpoint.topic || null) === (topic || null);
+    const resumeInfo = isResume ? ` (resuming from MCQ ${checkpoint.processedCount})` : '';
+    const filterLabel = getFilterLabel(category, topic);
+    if (!isResume) {
+        saveCheckpoint({ processedCount: 0, currentKeyOffset: 0, results: { matched: 0, mismatched: 0, errors: 0, mismatches: [], errorsList: [] }, totalMcqs: 0, date: getTodayKey(), category: category || null, topic: topic || null });
+    }
+    setImmediate(() => runVerification(category || null, topic || null));
+    res.json({ status: 'started', message: `Verifying ${filterLabel}${resumeInfo}`, model: 'llama-3.3-70b-versatile', category: category || null, topic: topic || null });
 });
 
 router.get('/progress', adminAuth, (req, res) => {
@@ -273,7 +303,9 @@ router.get('/progress', adminAuth, (req, res) => {
         mismatched: verificationState.mismatched, errors: verificationState.errors,
         percent: verificationState.total > 0 ? ((verificationState.processed / verificationState.total) * 100).toFixed(1) + '%' : '0%',
         startTime: verificationState.startTime,
-        elapsed: verificationState.startTime ? Math.floor((Date.now() - new Date(verificationState.startTime)) / 60000) + ' min' : 'N/A'
+        elapsed: verificationState.startTime ? Math.floor((Date.now() - new Date(verificationState.startTime)) / 60000) + ' min' : 'N/A',
+        category: verificationState.category, topic: verificationState.topic,
+        filterLabel: getFilterLabel(verificationState.category, verificationState.topic)
     });
 });
 
@@ -308,7 +340,7 @@ router.get('/checkpoint', adminAuth, (req, res) => {
     if (!checkpoint) {
         return res.json({ exists: false });
     }
-    res.json({ exists: true, processedCount: checkpoint.processedCount, totalMcqs: checkpoint.totalMcqs, date: checkpoint.date });
+    res.json({ exists: true, processedCount: checkpoint.processedCount, totalMcqs: checkpoint.totalMcqs, date: checkpoint.date, category: checkpoint.category || null, topic: checkpoint.topic || null });
 });
 
 module.exports = router;
